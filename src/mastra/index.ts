@@ -8,5 +8,5 @@ export const mastra = new Mastra({
     
 });
 
-// Add temporarily to test
+
 console.log("KEY:", process.env.GOOGLE_GENERATIVE_AI_API_KEY?.slice(0, 5) + "...");
