@@ -18,6 +18,9 @@
   },
   "dependencies": {
     "@mastra/core": "^0.23.3",
+    "@mastra/libsql": "^0.16.1",
+    "@mastra/loggers": "^0.10.18",
+    "@mastra/memory": "^0.15.10",
     "dotenv": "^17.2.3",
     "zod": "^4.1.12"
   }

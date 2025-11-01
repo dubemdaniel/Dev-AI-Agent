@@ -1,3 +1,10 @@
 {
-  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/typescript.mjs": {}
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/typescript.mjs": {},
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/@mastra-loggers.mjs": {
+    "pino": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/loggers/dist/index.js",
+    "pino-pretty": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/loggers/dist/index.js"
+  },
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/@mastra-libsql.mjs": {
+    "@libsql/client": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/libsql/dist/index.js"
+  }
 }

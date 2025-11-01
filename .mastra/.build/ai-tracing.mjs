@@ -2,12 +2,13 @@ import { RuntimeContext } from './@mastra-core-runtime-context.mjs';
 import { M as MastraError } from './error.mjs';
 import { WritableStream as WritableStream$1, TransformStream as TransformStream$1 } from 'stream/web';
 import { i as isVercelTool, v as validateToolInput } from './tools.mjs';
-import { g as getDefaultExportFromCjs, C as ConsoleLogger, L as LogLevel, M as MastraBase, R as RegisteredLogger } from './_commonjsHelpers.mjs';
+import { g as getDefaultExportFromCjs, M as MastraBase } from './_commonjsHelpers.mjs';
+import { C as ConsoleLogger, L as LogLevel, R as RegisteredLogger } from './chunk-UXG7PYML.mjs';
 import { createHash } from 'crypto';
 import { ZodFirstPartyTypeKind, z } from './zod.mjs';
 import { zodToJsonSchema as zodToJsonSchema$1 } from './@mastra-core-utils-zod-to-json.mjs';
 import { t as trace, S as SpanStatusCode } from './trace-api.mjs';
-import { u as union, s as string, c as _instanceof, d as custom, l as lazy, e as _null, n as number, f as boolean, r as record, g as array, o as object$1, h as literal, i as unknown, m as optional, a as any, q as never, _ as _enum, Z as ZodNumber, v as ZodString, w as tuple, x as ZodArray, y as intersection, z as ZodObject, A as ZodRecord, B as ZodOptional, C as ZodNull, D as ZodUnion, E as ZodDate, F as ZodDefault, G as ZodNever, H as strictObject, I as ZodUnknown, k as looseObject } from './coerce.mjs';
+import { u as union, s as string, c as _instanceof, d as custom, l as lazy, e as _null, n as number, f as boolean, r as record, g as array, o as object$1, h as literal, i as unknown, m as optional, a as any, v as never, _ as _enum, w as ZodNumber, x as ZodString, y as tuple, z as ZodArray, A as intersection, Z as ZodObject, B as ZodRecord, C as ZodOptional, D as ZodNull, E as ZodUnion, F as ZodDate, G as ZodDefault, H as ZodNever, q as strictObject, I as ZodUnknown, k as looseObject } from './coerce.mjs';
 
 // src/tools/stream.ts
 var ToolStream = class extends WritableStream$1 {
@@ -12218,6 +12219,15 @@ function checkEvalStorageFields(traceObject, logger) {
   }
   return true;
 }
+var SQL_IDENTIFIER_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+function parseSqlIdentifier(name, kind = "identifier") {
+  if (!SQL_IDENTIFIER_PATTERN.test(name) || name.length > 63) {
+    throw new Error(
+      `Invalid ${kind}: ${name}. Must start with a letter or underscore, contain only letters, numbers, or underscores, and be at most 63 characters long.`
+    );
+  }
+  return name;
+}
 async function fetchWithRetry(url, options = {}, maxRetries = 3) {
   let retryCount = 0;
   let lastError = null;
@@ -14014,4 +14024,4 @@ var ModelSpanTracker = class {
   }
 };
 
-export { AISpanType as A, generateEmptyFromSchema as B, checkEvalStorageFields as C, DeepSeekSchemaCompatLayer as D, GoogleSchemaCompatLayer as G, MetaSchemaCompatLayer as M, OpenAIReasoningSchemaCompatLayer as O, ToolStream as T, shutdownAITracingRegistry as a, convertUint8ArrayToBase64 as b, convertToCoreMessages as c, deepMerge as d, OpenAISchemaCompatLayer as e, fetchWithRetry as f, getAllAITracing as g, AnthropicSchemaCompatLayer as h, applyCompatLayer as i, isZodType as j, jsonSchema as k, generateText as l, generateObject as m, streamText as n, output_exports as o, streamObject as p, delay as q, ensureToolProperties as r, setupAITracing as s, makeCoreTool as t, createMastraProxy as u, getOrCreateSpan as v, getValidTraceId as w, wrapMastra as x, selectFields as y, ModelSpanTracker as z };
+export { AISpanType as A, createMastraProxy as B, getOrCreateSpan as C, DeepSeekSchemaCompatLayer as D, getValidTraceId as E, ToolStream as F, GoogleSchemaCompatLayer as G, wrapMastra as H, InvalidArgumentError$1 as I, JSONParseError as J, selectFields as K, ModelSpanTracker as L, MetaSchemaCompatLayer as M, checkEvalStorageFields as N, OpenAIReasoningSchemaCompatLayer as O, SecureJSON as S, TypeValidationError as T, shutdownAITracingRegistry as a, convertUint8ArrayToBase64 as b, convertToCoreMessages as c, customAlphabet as d, AISDKError as e, fetchWithRetry as f, getAllAITracing as g, APICallError as h, convertJsonSchemaToZod as i, generateEmptyFromSchema as j, deepMerge as k, OpenAISchemaCompatLayer as l, AnthropicSchemaCompatLayer as m, applyCompatLayer as n, isZodType as o, parseSqlIdentifier as p, jsonSchema as q, output_exports as r, setupAITracing as s, generateText as t, generateObject as u, streamText as v, streamObject as w, delay as x, ensureToolProperties as y, makeCoreTool as z };

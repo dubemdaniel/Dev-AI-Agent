@@ -1,4 +1,1 @@
-// src/storage/constants.ts
-var TABLE_EVALS = "mastra_evals";
-
-export { TABLE_EVALS };
+export { a as TABLE_EVALS } from './storage.mjs';
