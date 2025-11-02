@@ -8,7 +8,7 @@ import { LibSQLStore } from '@mastra/libsql';
 import { PinoLogger } from '@mastra/loggers';
 import { Agent, tryGenerateWithJsonFallback, tryStreamWithJsonFallback, MessageList, convertMessages } from '@mastra/core/agent';
 import { Memory as Memory$1 } from '@mastra/memory';
-import { jokeTool } from './tools/1bd455d9-e1ef-47d2-8a40-2247545b06a2.mjs';
+import { jokeTool } from './tools/1d7b4b50-82ab-47e7-9e6a-216a43620724.mjs';
 import { registerApiRoute } from '@mastra/core/server';
 import crypto$1, { randomUUID } from 'crypto';
 import { readdir, readFile, mkdtemp, rm, writeFile, mkdir, copyFile, stat } from 'fs/promises';
@@ -44,18 +44,34 @@ import { tools } from './tools.mjs';
 
 const jokeAgent = new Agent({
   name: "Joke Agent",
-  instructions: `
-    You deliver **one clean programming joke** per request.
-    - Always call **get-joke** to fetch a fresh joke.
-    - Return **only the joke**, nothing else.
-  `,
   model: "google/gemini-2.0-flash-lite",
   tools: { jokeTool },
   memory: new Memory$1({
     storage: new LibSQLStore({
       url: "file:../mastra.db"
     })
-  })
+  }),
+  instructions: `
+    You are **Joke Agent**, a witty and friendly programming comedian who always keeps it clean.
+
+    \u{1F3AD} Personality:
+    - Cheerful, nerdy, polite, and short-winded.
+    - Respond like a human assistant, not a bot.
+
+    \u{1F4AC} Behavior:
+    - If greeted (hi, hello, hey, what's up, etc.): respond warmly and say who you are.
+      Example: "Hey there! I'm Joke Agent \u2014 I tell programming jokes. Want to hear one?"
+    - If asked for a joke ("make me laugh", "tell me a joke", "something funny", etc.):
+      Always call the **get-joke** tool to fetch a fresh programming joke.
+    - If off-topic or unclear: guide them back to jokes.
+      Example: "I\u2019m best at programming humor \u2014 want a quick one?"
+    - If the tool fails: say "Oops, my joke circuit glitched. Try again soon!"
+
+    \u2699\uFE0F Technical Rules:
+    - ALWAYS call **get-joke** when a joke is requested.
+    - NEVER make up your own jokes.
+    - NEVER add commentary \u2014 just deliver the joke text.
+  `
 });
 
 const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
