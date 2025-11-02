@@ -8,15 +8,15 @@ Built with **Mastra** for AI orchestration and integrated into **Telex.im** for 
 ## 🎯 Overview
 
 **Joke Agent** brings a touch of humor to your developer workspace.  
-It listens to messages like:
 
-- “Hi, what do you do?”
-- “Give me a joke to start the day.”
-- “Tell me a programming joke.”
+It listens to messages like:
+- "Hi, what do you do?"
+- "Give me a joke to start the day."
+- "Tell me a programming joke."
 
 …and responds instantly with a clean, witty programming joke fetched dynamically from the **JokeAPI**.
 
-The agent also responds politely to greetings and guides users to ask for a joke if they haven’t already.
+The agent also responds politely to greetings and guides users to ask for a joke if they haven't already.
 
 ---
 
@@ -33,54 +33,67 @@ The agent is powered by **Mastra** and structured around:
 
 ## 📂 Folder Structure
 
+```
 src/
 ├── mastra/
-│ ├── agents/
-│ │ └── joke-agent.ts # Defines the agent logic, model, and tools
-│ ├── tools/
-│ │ └── joke-tool.ts # Custom tool fetching jokes from JokeAPI
-│ ├── routes/
-│ │ └── a2a-agent-route.ts # Route handler for Telex.im and A2A integration
-│ └── index.ts # Initializes Mastra and registers agents
-├── .env # Environment variables (API keys, etc.)
+│   ├── agents/
+│   │   └── joke-agent.ts          # Defines the agent logic, model, and tools
+│   ├── tools/
+│   │   └── joke-tool.ts           # Custom tool fetching jokes from JokeAPI
+│   ├── routes/
+│   │   └── a2a-agent-route.ts     # Route handler for Telex.im and A2A integration
+│   └── index.ts                   # Initializes Mastra and registers agents
+├── .env                           # Environment variables (API keys, etc.)
 ├── package.json
 └── README.md
-
-yaml
-Copy code
+```
 
 ---
 
 ## ⚙️ Setup & Installation
 
 ### 1. Clone the repository
+
 ```bash
 git clone https://github.com/dubemdaniel/Dev-AI-Agent.git
 cd joke-agent
-2. Install dependencies
+```
 
+### 2. Install dependencies
+
+```bash
 npm install
-3. Configure environment variables
-Create a .env file in your project root:
+```
 
-env
+### 3. Configure environment variables
 
+Create a `.env` file in your project root:
+
+```env
 GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key
+```
 
-4. Run locally
+### 4. Run locally
 
+```bash
 npm run dev
+```
+
 You should see:
 
-
+```
 ✅ Joke Agent ready on Mastra
 Playground: http://localhost:4113/
 API:        http://localhost:4113/api
+```
 
-🌐 Telex.im Integration
+---
+
+## 🌐 Telex.im Integration
+
 To integrate your agent with Telex.im, create a new workflow with this configuration:
 
-
+```json
 {
   "active": true,
   "category": "fun",
@@ -105,24 +118,49 @@ To integrate your agent with Telex.im, create a new workflow with this configura
     "executionOrder": "v1"
   }
 }
+```
+
 Once this workflow is active, your Joke Agent will respond to messages directly inside Telex.im.
 
-🚀 Deploying on Mastra Cloud
-Push your code to GitHub.
+---
 
-Log in to Mastra Cloud.
+## 🚀 Deploying on Mastra Cloud
 
-Connect your repo and deploy.
-
-Redeploy or restart your local dev server.
+1. Push your code to GitHub
+2. Log in to [Mastra Cloud](https://mastra.cloud)
+3. Connect your repo and deploy
+4. Redeploy or restart your local dev server
 
 After deployment, your agent will be live at:
 
-
+```
 https://YOUR-PROJECT.mastra.cloud/a2a/agent/jokeAgent
-🧠 Example Interaction
-User: “Hey there, what do you do?”
-Agent: “Hi! I’m your programming comedian. Want to hear a joke?”
+```
 
-User: “Sure, give me one.”
-Agent: “Why did the developer go broke? Because he used up all his cache.”
+---
+
+## 🧠 Example Interaction
+
+**User:** "Hey there, what do you do?"  
+**Agent:** "Hi! I'm your programming comedian. Want to hear a joke?"
+
+**User:** "Sure, give me one."  
+**Agent:** "Why did the developer go broke? Because he used up all his cache."
+
+---
+
+## 📝 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/dubemdaniel/Dev-AI-Agent/issues).
+
+---
+
+## 👨‍💻 Author
+
+Built with ❤️ by [dubemdaniel](https://github.com/dubemdaniel)
