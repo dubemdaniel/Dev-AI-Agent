@@ -1,97 +1,85 @@
-🤖 Joke Agent — Mastra x Telex.im Integration
+# 🤖 Joke Agent — Mastra x Telex.im Integration
 
-A fun, interactive AI agent that delivers clean programming jokes on demand.
-Built with Mastra for AI orchestration and integrated into Telex.im for real-time message handling.
+A fun, interactive AI agent that delivers clean **programming jokes** on demand.  
+Built with **Mastra** for AI orchestration and integrated into **Telex.im** for real-time message handling.
 
-🎯 Overview
+---
 
-Joke Agent brings a touch of humor to your developer workspace.
+## 🎯 Overview
+
+**Joke Agent** brings a touch of humor to your developer workspace.  
 It listens to messages like:
 
-“Hi, what do you do?”
+- “Hi, what do you do?”
+- “Give me a joke to start the day.”
+- “Tell me a programming joke.”
 
-“Give me a joke to start the day.”
-
-“Tell me a programming joke.”
-
-…and responds instantly with a clean, witty programming joke fetched dynamically from the JokeAPI.
+…and responds instantly with a clean, witty programming joke fetched dynamically from the **JokeAPI**.
 
 The agent also responds politely to greetings and guides users to ask for a joke if they haven’t already.
 
-🧠 How It Works
+---
 
-The agent is powered by Mastra and structured around:
+## 🧠 How It Works
 
-AI Model: google/gemini-2.0-flash-lite
+The agent is powered by **Mastra** and structured around:
 
-Tool: jokeTool — fetches random, safe programming jokes
+- **AI Model:** `google/gemini-2.0-flash-lite`
+- **Tool:** `jokeTool` — fetches random, safe programming jokes
+- **Memory:** optional persistence with `@mastra/memory` and `@mastra/libsql`
+- **Routing:** custom A2A route for Telex integration (`a2a-agent-route.ts`)
 
-Memory: optional persistence with @mastra/memory and @mastra/libsql
+---
 
-Routing: custom A2A route for Telex integration (a2a-agent-route.ts)
+## 📂 Folder Structure
 
-📂 Folder Structure
 src/
- ├── mastra/
- │   ├── agents/
- │   │   └── joke-agent.ts         # Defines the agent logic, model, and tools
- │   ├── tools/
- │   │   └── joke-tool.ts          # Custom tool fetching jokes from JokeAPI
- │   ├── routes/
- │   │   └── a2a-agent-route.ts    # Route handler for Telex.im and A2A integration
- │   └── index.ts                  # Initializes Mastra and registers agents
- ├── .env                          # Environment variables (API keys, etc.)
- ├── package.json
- └── README.md
+├── mastra/
+│ ├── agents/
+│ │ └── joke-agent.ts # Defines the agent logic, model, and tools
+│ ├── tools/
+│ │ └── joke-tool.ts # Custom tool fetching jokes from JokeAPI
+│ ├── routes/
+│ │ └── a2a-agent-route.ts # Route handler for Telex.im and A2A integration
+│ └── index.ts # Initializes Mastra and registers agents
+├── .env # Environment variables (API keys, etc.)
+├── package.json
+└── README.md
 
-⚙️ Setup & Installation
-1. Clone the repository
-git clone https://github.com/dubemdaniel/Dev-AI-Agent
+yaml
+Copy code
+
+---
+
+## ⚙️ Setup & Installation
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/dubemdaniel/Dev-AI-Agent.git
 cd joke-agent
-
 2. Install dependencies
+
 npm install
-
 3. Configure environment variables
-
 Create a .env file in your project root:
+
+env
 
 GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key
 
 4. Run locally
+
 npm run dev
-
-
 You should see:
+
 
 ✅ Joke Agent ready on Mastra
 Playground: http://localhost:4113/
 API:        http://localhost:4113/api
 
-
-
-Once this workflow is active, your Joke Agent will respond to messages directly inside Telex.im.
-
-🚀 Deploying on Mastra Cloud
-
-Push your code to GitHub.
-
-Log in to Mastra Cloud
-.
-
-Connect your repo and deploy.
-
-
-Redeploy or restart your local dev server.
-
-After deployment, your agent will be live at:
-
-https://YOUR-PROJECT.mastra.cloud/a2a/agent/jokeAgent
-
-
 🌐 Telex.im Integration
-
 To integrate your agent with Telex.im, create a new workflow with this configuration:
+
 
 {
   "active": true,
@@ -117,10 +105,22 @@ To integrate your agent with Telex.im, create a new workflow with this configura
     "executionOrder": "v1"
   }
 }
+Once this workflow is active, your Joke Agent will respond to messages directly inside Telex.im.
+
+🚀 Deploying on Mastra Cloud
+Push your code to GitHub.
+
+Log in to Mastra Cloud.
+
+Connect your repo and deploy.
+
+Redeploy or restart your local dev server.
+
+After deployment, your agent will be live at:
 
 
+https://YOUR-PROJECT.mastra.cloud/a2a/agent/jokeAgent
 🧠 Example Interaction
-
 User: “Hey there, what do you do?”
 Agent: “Hi! I’m your programming comedian. Want to hear a joke?”
 
