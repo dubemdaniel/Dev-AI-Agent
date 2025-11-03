@@ -1,1 +1,33 @@
-{}
+{
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/@mastra-libsql.mjs": {
+    "typescript": "\u0000virtual:#virtual-zod",
+    "zod": "\u0000virtual:#virtual-zod",
+    "@mastra/memory": "\u0000virtual:#virtual-zod",
+    "@mastra/libsql": "\u0000virtual:#virtual-zod"
+  },
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/@mastra-core-scores-scoreTraces.mjs": {
+    "zod": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/core/dist/scores/scoreTraces/index.js"
+  },
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/@mastra-loggers.mjs": {
+    "pino": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/loggers/dist/index.js",
+    "pino-pretty": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/loggers/dist/index.js"
+  },
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/chunk-E3PG7G6E.mjs": {
+    "zod": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/core/dist/chunk-E3PG7G6E.js"
+  },
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/chunk-KAEQISOW.mjs": {
+    "zod": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/core/dist/chunk-KAEQISOW.js"
+  },
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/@mastra-memory.mjs": {},
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/zod.mjs": {},
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/typescript.mjs": {},
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/zod-to-json.mjs": {
+    "zod": "/home/dubemdaniel/Documents/dev-agent/node_modules/@mastra/core/node_modules/@mastra/schema-compat/dist/chunk-U2HXWNAF.js"
+  },
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/ai-tracing.mjs": {
+    "zod": "\u0000virtual:#virtual-@mastra/core/utils"
+  },
+  "/home/dubemdaniel/Documents/dev-agent/.mastra/.build/workflows.mjs": {
+    "zod": "\u0000virtual:#virtual-@mastra/core/stream"
+  }
+}
