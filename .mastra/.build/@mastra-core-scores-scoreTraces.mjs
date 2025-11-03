@@ -1,9 +1,8 @@
-import { c as createWorkflow, a as createStep } from './chunk-PXP7ESSG.mjs';
-import { s as saveScorePayloadSchema } from './chunk-KAEQISOW.mjs';
+import { c as createWorkflow, a as createStep, s as saveScorePayloadSchema } from './chunk-KAEQISOW.mjs';
 import { c as convertMessages } from './chunk-E3PG7G6E.mjs';
 import { M as MastraError } from './error.mjs';
 import pMap from './index.mjs';
-import { z } from './zod.mjs';
+import z9 from 'zod';
 
 // src/scores/scoreTraces/scoreTraces.ts
 async function scoreTraces({
@@ -229,16 +228,16 @@ function transformTraceToScorerInputAndOutput(trace) {
 // src/scores/scoreTraces/scoreTracesWorkflow.ts
 var getTraceStep = createStep({
   id: "__process-trace-scoring",
-  inputSchema: z.object({
-    targets: z.array(
-      z.object({
-        traceId: z.string(),
-        spanId: z.string().optional()
+  inputSchema: z9.object({
+    targets: z9.array(
+      z9.object({
+        traceId: z9.string(),
+        spanId: z9.string().optional()
       })
     ),
-    scorerName: z.string()
+    scorerName: z9.string()
   }),
-  outputSchema: z.any(),
+  outputSchema: z9.any(),
   execute: async ({ inputData, tracingContext, mastra }) => {
     const logger = mastra.getLogger();
     if (!logger) {
@@ -399,16 +398,16 @@ async function attachScoreToSpan({
 }
 var scoreTracesWorkflow = createWorkflow({
   id: "__batch-scoring-traces",
-  inputSchema: z.object({
-    targets: z.array(
-      z.object({
-        traceId: z.string(),
-        spanId: z.string().optional()
+  inputSchema: z9.object({
+    targets: z9.array(
+      z9.object({
+        traceId: z9.string(),
+        spanId: z9.string().optional()
       })
     ),
-    scorerName: z.string()
+    scorerName: z9.string()
   }),
-  outputSchema: z.any(),
+  outputSchema: z9.any(),
   steps: [getTraceStep],
   options: {
     tracingPolicy: {

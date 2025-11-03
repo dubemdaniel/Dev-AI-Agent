@@ -73,7 +73,7 @@ const jokeAgent = new Agent({
   tools: { jokeTool },
   memory: new Memory$1({
     storage: new LibSQLStore({
-      url: "file:../mastra.db"
+      url: ":memory:"
     })
   }),
   instructions: `
@@ -238,6 +238,9 @@ const mastra = new Mastra({
       swaggerUI: true
     },
     apiRoutes: [a2aAgentRoute]
+  },
+  bundler: {
+    externals: ["zod", "dotenv", "@mastra/core", "@mastra/memory", "@mastra/libsql"]
   }
 });
 console.log("\u2705 Joke Agent ready on Mastra");

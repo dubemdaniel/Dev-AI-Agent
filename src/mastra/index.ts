@@ -23,6 +23,9 @@ export const mastra = new Mastra({
     },
     apiRoutes: [a2aAgentRoute],
   },
+   bundler: {
+    externals: ['zod', 'dotenv', '@mastra/core', '@mastra/memory', '@mastra/libsql'],
+  },
 });
 
 console.log("✅ Joke Agent ready on Mastra");

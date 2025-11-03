@@ -5,10 +5,10 @@ import { i as isVercelTool, v as validateToolInput } from './tools.mjs';
 import { g as getDefaultExportFromCjs, M as MastraBase } from './_commonjsHelpers.mjs';
 import { C as ConsoleLogger, L as LogLevel, R as RegisteredLogger } from './chunk-UXG7PYML.mjs';
 import { createHash } from 'crypto';
-import { ZodFirstPartyTypeKind, z } from './zod.mjs';
-import { zodToJsonSchema as zodToJsonSchema$1 } from './@mastra-core-utils-zod-to-json.mjs';
+import { z, ZodOptional, ZodObject as ZodObject$1, ZodNull, ZodArray as ZodArray$1, ZodUnion, ZodString as ZodString$1, ZodNumber as ZodNumber$1, ZodDate, ZodDefault } from 'zod';
+import { z as zodToJsonSchema, a as zodToJsonSchema$1 } from './zod-to-json.mjs';
 import { t as trace, S as SpanStatusCode } from './trace-api.mjs';
-import { u as union, s as string, c as _instanceof, d as custom, l as lazy, e as _null, n as number, f as boolean, r as record, g as array, o as object$1, h as literal, i as unknown, m as optional, a as any, v as never, _ as _enum, w as ZodNumber, x as ZodString, y as tuple, z as ZodArray, A as intersection, Z as ZodObject, B as ZodRecord, C as ZodOptional, D as ZodNull, E as ZodUnion, F as ZodDate, G as ZodDefault, H as ZodNever, q as strictObject, I as ZodUnknown, k as looseObject } from './coerce.mjs';
+import { eD as any, fh as never, k as string, p as number, q as boolean, o as _null, t as array, m as custom, u as union, w as literal, eV as _enum, c as ZodNumber, v as object$1, Z as ZodString, fI as tuple, dz as ZodArray, f5 as intersection, ec as ZodObject, ej as ZodRecord, ed as ZodOptional$1, e9 as ZodNull$1, ew as ZodUnion$1, j as ZodDate$1, dL as ZodDefault$1, e7 as ZodNever, fA as strictObject, ex as ZodUnknown, z as looseObject } from './schemas.mjs';
 
 // src/tools/stream.ts
 var ToolStream = class extends WritableStream$1 {
@@ -625,7 +625,7 @@ const parseSchema = (schema, refs = { seen: new Map(), path: [] }, blockMeta) =>
         seen = { r: undefined, n: 0 };
         refs.seen.set(schema, seen);
     }
-    let parsed = selectParser$1(schema, refs);
+    let parsed = selectParser(schema, refs);
     if (!blockMeta) {
         if (!refs.withoutDescribes) {
             parsed = addDescribes(schema, parsed);
@@ -656,7 +656,7 @@ const addAnnotations = (schema, parsed) => {
     }
     return parsed;
 };
-const selectParser$1 = (schema, refs) => {
+const selectParser = (schema, refs) => {
     if (its.a.nullable(schema)) {
         return parseNullable(schema, refs);
     }
@@ -769,1354 +769,6 @@ ${result}`;
 `;
     }
     return result;
-};
-
-const ignoreOverride = Symbol("Let zodToJsonSchema decide on which parser to use");
-const defaultOptions = {
-    name: undefined,
-    $refStrategy: "root",
-    basePath: ["#"],
-    effectStrategy: "input",
-    pipeStrategy: "all",
-    dateStrategy: "format:date-time",
-    mapStrategy: "entries",
-    removeAdditionalStrategy: "passthrough",
-    allowedAdditionalProperties: true,
-    rejectedAdditionalProperties: false,
-    definitionPath: "definitions",
-    target: "jsonSchema7",
-    strictUnions: false,
-    definitions: {},
-    errorMessages: false,
-    markdownDescription: false,
-    patternStrategy: "escape",
-    applyRegexFlags: false,
-    emailStrategy: "format:email",
-    base64Strategy: "contentEncoding:base64",
-    nameStrategy: "ref",
-    openAiAnyTypeName: "OpenAiAnyType"
-};
-const getDefaultOptions = (options) => (typeof options === "string"
-    ? {
-        ...defaultOptions,
-        name: options,
-    }
-    : {
-        ...defaultOptions,
-        ...options,
-    });
-
-const getRefs = (options) => {
-    const _options = getDefaultOptions(options);
-    const currentPath = _options.name !== undefined
-        ? [..._options.basePath, _options.definitionPath, _options.name]
-        : _options.basePath;
-    return {
-        ..._options,
-        flags: { hasReferencedOpenAiAnyType: false },
-        currentPath: currentPath,
-        propertyPath: undefined,
-        seen: new Map(Object.entries(_options.definitions).map(([name, def]) => [
-            def._def,
-            {
-                def: def._def,
-                path: [..._options.basePath, _options.definitionPath, name],
-                // Resolution of references will be forced even though seen, so it's ok that the schema is undefined here for now.
-                jsonSchema: undefined,
-            },
-        ])),
-    };
-};
-
-function addErrorMessage(res, key, errorMessage, refs) {
-    if (!refs?.errorMessages)
-        return;
-    if (errorMessage) {
-        res.errorMessage = {
-            ...res.errorMessage,
-            [key]: errorMessage,
-        };
-    }
-}
-function setResponseValueAndErrors(res, key, value, errorMessage, refs) {
-    res[key] = value;
-    addErrorMessage(res, key, errorMessage, refs);
-}
-
-const getRelativePath = (pathA, pathB) => {
-    let i = 0;
-    for (; i < pathA.length && i < pathB.length; i++) {
-        if (pathA[i] !== pathB[i])
-            break;
-    }
-    return [(pathA.length - i).toString(), ...pathB.slice(i)].join("/");
-};
-
-function parseAnyDef(refs) {
-    if (refs.target !== "openAi") {
-        return {};
-    }
-    const anyDefinitionPath = [
-        ...refs.basePath,
-        refs.definitionPath,
-        refs.openAiAnyTypeName,
-    ];
-    refs.flags.hasReferencedOpenAiAnyType = true;
-    return {
-        $ref: refs.$refStrategy === "relative"
-            ? getRelativePath(anyDefinitionPath, refs.currentPath)
-            : anyDefinitionPath.join("/"),
-    };
-}
-
-function parseArrayDef(def, refs) {
-    const res = {
-        type: "array",
-    };
-    if (def.type?._def &&
-        def.type?._def?.typeName !== ZodFirstPartyTypeKind.ZodAny) {
-        res.items = parseDef(def.type._def, {
-            ...refs,
-            currentPath: [...refs.currentPath, "items"],
-        });
-    }
-    if (def.minLength) {
-        setResponseValueAndErrors(res, "minItems", def.minLength.value, def.minLength.message, refs);
-    }
-    if (def.maxLength) {
-        setResponseValueAndErrors(res, "maxItems", def.maxLength.value, def.maxLength.message, refs);
-    }
-    if (def.exactLength) {
-        setResponseValueAndErrors(res, "minItems", def.exactLength.value, def.exactLength.message, refs);
-        setResponseValueAndErrors(res, "maxItems", def.exactLength.value, def.exactLength.message, refs);
-    }
-    return res;
-}
-
-function parseBigintDef(def, refs) {
-    const res = {
-        type: "integer",
-        format: "int64",
-    };
-    if (!def.checks)
-        return res;
-    for (const check of def.checks) {
-        switch (check.kind) {
-            case "min":
-                if (refs.target === "jsonSchema7") {
-                    if (check.inclusive) {
-                        setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
-                    }
-                    else {
-                        setResponseValueAndErrors(res, "exclusiveMinimum", check.value, check.message, refs);
-                    }
-                }
-                else {
-                    if (!check.inclusive) {
-                        res.exclusiveMinimum = true;
-                    }
-                    setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
-                }
-                break;
-            case "max":
-                if (refs.target === "jsonSchema7") {
-                    if (check.inclusive) {
-                        setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
-                    }
-                    else {
-                        setResponseValueAndErrors(res, "exclusiveMaximum", check.value, check.message, refs);
-                    }
-                }
-                else {
-                    if (!check.inclusive) {
-                        res.exclusiveMaximum = true;
-                    }
-                    setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
-                }
-                break;
-            case "multipleOf":
-                setResponseValueAndErrors(res, "multipleOf", check.value, check.message, refs);
-                break;
-        }
-    }
-    return res;
-}
-
-function parseBooleanDef() {
-    return {
-        type: "boolean",
-    };
-}
-
-function parseBrandedDef(_def, refs) {
-    return parseDef(_def.type._def, refs);
-}
-
-const parseCatchDef = (def, refs) => {
-    return parseDef(def.innerType._def, refs);
-};
-
-function parseDateDef(def, refs, overrideDateStrategy) {
-    const strategy = overrideDateStrategy ?? refs.dateStrategy;
-    if (Array.isArray(strategy)) {
-        return {
-            anyOf: strategy.map((item, i) => parseDateDef(def, refs, item)),
-        };
-    }
-    switch (strategy) {
-        case "string":
-        case "format:date-time":
-            return {
-                type: "string",
-                format: "date-time",
-            };
-        case "format:date":
-            return {
-                type: "string",
-                format: "date",
-            };
-        case "integer":
-            return integerDateParser(def, refs);
-    }
-}
-const integerDateParser = (def, refs) => {
-    const res = {
-        type: "integer",
-        format: "unix-time",
-    };
-    if (refs.target === "openApi3") {
-        return res;
-    }
-    for (const check of def.checks) {
-        switch (check.kind) {
-            case "min":
-                setResponseValueAndErrors(res, "minimum", check.value, // This is in milliseconds
-                check.message, refs);
-                break;
-            case "max":
-                setResponseValueAndErrors(res, "maximum", check.value, // This is in milliseconds
-                check.message, refs);
-                break;
-        }
-    }
-    return res;
-};
-
-function parseDefaultDef(_def, refs) {
-    return {
-        ...parseDef(_def.innerType._def, refs),
-        default: _def.defaultValue(),
-    };
-}
-
-function parseEffectsDef(_def, refs) {
-    return refs.effectStrategy === "input"
-        ? parseDef(_def.schema._def, refs)
-        : parseAnyDef(refs);
-}
-
-function parseEnumDef(def) {
-    return {
-        type: "string",
-        enum: Array.from(def.values),
-    };
-}
-
-const isJsonSchema7AllOfType = (type) => {
-    if ("type" in type && type.type === "string")
-        return false;
-    return "allOf" in type;
-};
-function parseIntersectionDef(def, refs) {
-    const allOf = [
-        parseDef(def.left._def, {
-            ...refs,
-            currentPath: [...refs.currentPath, "allOf", "0"],
-        }),
-        parseDef(def.right._def, {
-            ...refs,
-            currentPath: [...refs.currentPath, "allOf", "1"],
-        }),
-    ].filter((x) => !!x);
-    let unevaluatedProperties = refs.target === "jsonSchema2019-09"
-        ? { unevaluatedProperties: false }
-        : undefined;
-    const mergedAllOf = [];
-    // If either of the schemas is an allOf, merge them into a single allOf
-    allOf.forEach((schema) => {
-        if (isJsonSchema7AllOfType(schema)) {
-            mergedAllOf.push(...schema.allOf);
-            if (schema.unevaluatedProperties === undefined) {
-                // If one of the schemas has no unevaluatedProperties set,
-                // the merged schema should also have no unevaluatedProperties set
-                unevaluatedProperties = undefined;
-            }
-        }
-        else {
-            let nestedSchema = schema;
-            if ("additionalProperties" in schema &&
-                schema.additionalProperties === false) {
-                const { additionalProperties, ...rest } = schema;
-                nestedSchema = rest;
-            }
-            else {
-                // As soon as one of the schemas has additionalProperties set not to false, we allow unevaluatedProperties
-                unevaluatedProperties = undefined;
-            }
-            mergedAllOf.push(nestedSchema);
-        }
-    });
-    return mergedAllOf.length
-        ? {
-            allOf: mergedAllOf,
-            ...unevaluatedProperties,
-        }
-        : undefined;
-}
-
-function parseLiteralDef(def, refs) {
-    const parsedType = typeof def.value;
-    if (parsedType !== "bigint" &&
-        parsedType !== "number" &&
-        parsedType !== "boolean" &&
-        parsedType !== "string") {
-        return {
-            type: Array.isArray(def.value) ? "array" : "object",
-        };
-    }
-    if (refs.target === "openApi3") {
-        return {
-            type: parsedType === "bigint" ? "integer" : parsedType,
-            enum: [def.value],
-        };
-    }
-    return {
-        type: parsedType === "bigint" ? "integer" : parsedType,
-        const: def.value,
-    };
-}
-
-let emojiRegex = undefined;
-/**
- * Generated from the regular expressions found here as of 2024-05-22:
- * https://github.com/colinhacks/zod/blob/master/src/types.ts.
- *
- * Expressions with /i flag have been changed accordingly.
- */
-const zodPatterns = {
-    /**
-     * `c` was changed to `[cC]` to replicate /i flag
-     */
-    cuid: /^[cC][^\s-]{8,}$/,
-    cuid2: /^[0-9a-z]+$/,
-    ulid: /^[0-9A-HJKMNP-TV-Z]{26}$/,
-    /**
-     * `a-z` was added to replicate /i flag
-     */
-    email: /^(?!\.)(?!.*\.\.)([a-zA-Z0-9_'+\-\.]*)[a-zA-Z0-9_+-]@([a-zA-Z0-9][a-zA-Z0-9\-]*\.)+[a-zA-Z]{2,}$/,
-    /**
-     * Constructed a valid Unicode RegExp
-     *
-     * Lazily instantiate since this type of regex isn't supported
-     * in all envs (e.g. React Native).
-     *
-     * See:
-     * https://github.com/colinhacks/zod/issues/2433
-     * Fix in Zod:
-     * https://github.com/colinhacks/zod/commit/9340fd51e48576a75adc919bff65dbc4a5d4c99b
-     */
-    emoji: () => {
-        if (emojiRegex === undefined) {
-            emojiRegex = RegExp("^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$", "u");
-        }
-        return emojiRegex;
-    },
-    /**
-     * Unused
-     */
-    uuid: /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/,
-    /**
-     * Unused
-     */
-    ipv4: /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/,
-    ipv4Cidr: /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/(3[0-2]|[12]?[0-9])$/,
-    /**
-     * Unused
-     */
-    ipv6: /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/,
-    ipv6Cidr: /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/,
-    base64: /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/,
-    base64url: /^([0-9a-zA-Z-_]{4})*(([0-9a-zA-Z-_]{2}(==)?)|([0-9a-zA-Z-_]{3}(=)?))?$/,
-    nanoid: /^[a-zA-Z0-9_-]{21}$/,
-    jwt: /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/,
-};
-function parseStringDef(def, refs) {
-    const res = {
-        type: "string",
-    };
-    if (def.checks) {
-        for (const check of def.checks) {
-            switch (check.kind) {
-                case "min":
-                    setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number"
-                        ? Math.max(res.minLength, check.value)
-                        : check.value, check.message, refs);
-                    break;
-                case "max":
-                    setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number"
-                        ? Math.min(res.maxLength, check.value)
-                        : check.value, check.message, refs);
-                    break;
-                case "email":
-                    switch (refs.emailStrategy) {
-                        case "format:email":
-                            addFormat(res, "email", check.message, refs);
-                            break;
-                        case "format:idn-email":
-                            addFormat(res, "idn-email", check.message, refs);
-                            break;
-                        case "pattern:zod":
-                            addPattern(res, zodPatterns.email, check.message, refs);
-                            break;
-                    }
-                    break;
-                case "url":
-                    addFormat(res, "uri", check.message, refs);
-                    break;
-                case "uuid":
-                    addFormat(res, "uuid", check.message, refs);
-                    break;
-                case "regex":
-                    addPattern(res, check.regex, check.message, refs);
-                    break;
-                case "cuid":
-                    addPattern(res, zodPatterns.cuid, check.message, refs);
-                    break;
-                case "cuid2":
-                    addPattern(res, zodPatterns.cuid2, check.message, refs);
-                    break;
-                case "startsWith":
-                    addPattern(res, RegExp(`^${escapeLiteralCheckValue(check.value, refs)}`), check.message, refs);
-                    break;
-                case "endsWith":
-                    addPattern(res, RegExp(`${escapeLiteralCheckValue(check.value, refs)}$`), check.message, refs);
-                    break;
-                case "datetime":
-                    addFormat(res, "date-time", check.message, refs);
-                    break;
-                case "date":
-                    addFormat(res, "date", check.message, refs);
-                    break;
-                case "time":
-                    addFormat(res, "time", check.message, refs);
-                    break;
-                case "duration":
-                    addFormat(res, "duration", check.message, refs);
-                    break;
-                case "length":
-                    setResponseValueAndErrors(res, "minLength", typeof res.minLength === "number"
-                        ? Math.max(res.minLength, check.value)
-                        : check.value, check.message, refs);
-                    setResponseValueAndErrors(res, "maxLength", typeof res.maxLength === "number"
-                        ? Math.min(res.maxLength, check.value)
-                        : check.value, check.message, refs);
-                    break;
-                case "includes": {
-                    addPattern(res, RegExp(escapeLiteralCheckValue(check.value, refs)), check.message, refs);
-                    break;
-                }
-                case "ip": {
-                    if (check.version !== "v6") {
-                        addFormat(res, "ipv4", check.message, refs);
-                    }
-                    if (check.version !== "v4") {
-                        addFormat(res, "ipv6", check.message, refs);
-                    }
-                    break;
-                }
-                case "base64url":
-                    addPattern(res, zodPatterns.base64url, check.message, refs);
-                    break;
-                case "jwt":
-                    addPattern(res, zodPatterns.jwt, check.message, refs);
-                    break;
-                case "cidr": {
-                    if (check.version !== "v6") {
-                        addPattern(res, zodPatterns.ipv4Cidr, check.message, refs);
-                    }
-                    if (check.version !== "v4") {
-                        addPattern(res, zodPatterns.ipv6Cidr, check.message, refs);
-                    }
-                    break;
-                }
-                case "emoji":
-                    addPattern(res, zodPatterns.emoji(), check.message, refs);
-                    break;
-                case "ulid": {
-                    addPattern(res, zodPatterns.ulid, check.message, refs);
-                    break;
-                }
-                case "base64": {
-                    switch (refs.base64Strategy) {
-                        case "format:binary": {
-                            addFormat(res, "binary", check.message, refs);
-                            break;
-                        }
-                        case "contentEncoding:base64": {
-                            setResponseValueAndErrors(res, "contentEncoding", "base64", check.message, refs);
-                            break;
-                        }
-                        case "pattern:zod": {
-                            addPattern(res, zodPatterns.base64, check.message, refs);
-                            break;
-                        }
-                    }
-                    break;
-                }
-                case "nanoid": {
-                    addPattern(res, zodPatterns.nanoid, check.message, refs);
-                }
-            }
-        }
-    }
-    return res;
-}
-function escapeLiteralCheckValue(literal, refs) {
-    return refs.patternStrategy === "escape"
-        ? escapeNonAlphaNumeric(literal)
-        : literal;
-}
-const ALPHA_NUMERIC = new Set("ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvxyz0123456789");
-function escapeNonAlphaNumeric(source) {
-    let result = "";
-    for (let i = 0; i < source.length; i++) {
-        if (!ALPHA_NUMERIC.has(source[i])) {
-            result += "\\";
-        }
-        result += source[i];
-    }
-    return result;
-}
-// Adds a "format" keyword to the schema. If a format exists, both formats will be joined in an allOf-node, along with subsequent ones.
-function addFormat(schema, value, message, refs) {
-    if (schema.format || schema.anyOf?.some((x) => x.format)) {
-        if (!schema.anyOf) {
-            schema.anyOf = [];
-        }
-        if (schema.format) {
-            schema.anyOf.push({
-                format: schema.format,
-                ...(schema.errorMessage &&
-                    refs.errorMessages && {
-                    errorMessage: { format: schema.errorMessage.format },
-                }),
-            });
-            delete schema.format;
-            if (schema.errorMessage) {
-                delete schema.errorMessage.format;
-                if (Object.keys(schema.errorMessage).length === 0) {
-                    delete schema.errorMessage;
-                }
-            }
-        }
-        schema.anyOf.push({
-            format: value,
-            ...(message &&
-                refs.errorMessages && { errorMessage: { format: message } }),
-        });
-    }
-    else {
-        setResponseValueAndErrors(schema, "format", value, message, refs);
-    }
-}
-// Adds a "pattern" keyword to the schema. If a pattern exists, both patterns will be joined in an allOf-node, along with subsequent ones.
-function addPattern(schema, regex, message, refs) {
-    if (schema.pattern || schema.allOf?.some((x) => x.pattern)) {
-        if (!schema.allOf) {
-            schema.allOf = [];
-        }
-        if (schema.pattern) {
-            schema.allOf.push({
-                pattern: schema.pattern,
-                ...(schema.errorMessage &&
-                    refs.errorMessages && {
-                    errorMessage: { pattern: schema.errorMessage.pattern },
-                }),
-            });
-            delete schema.pattern;
-            if (schema.errorMessage) {
-                delete schema.errorMessage.pattern;
-                if (Object.keys(schema.errorMessage).length === 0) {
-                    delete schema.errorMessage;
-                }
-            }
-        }
-        schema.allOf.push({
-            pattern: stringifyRegExpWithFlags(regex, refs),
-            ...(message &&
-                refs.errorMessages && { errorMessage: { pattern: message } }),
-        });
-    }
-    else {
-        setResponseValueAndErrors(schema, "pattern", stringifyRegExpWithFlags(regex, refs), message, refs);
-    }
-}
-// Mutate z.string.regex() in a best attempt to accommodate for regex flags when applyRegexFlags is true
-function stringifyRegExpWithFlags(regex, refs) {
-    if (!refs.applyRegexFlags || !regex.flags) {
-        return regex.source;
-    }
-    // Currently handled flags
-    const flags = {
-        i: regex.flags.includes("i"),
-        m: regex.flags.includes("m"),
-        s: regex.flags.includes("s"), // `.` matches newlines
-    };
-    // The general principle here is to step through each character, one at a time, applying mutations as flags require. We keep track when the current character is escaped, and when it's inside a group /like [this]/ or (also) a range like /[a-z]/. The following is fairly brittle imperative code; edit at your peril!
-    const source = flags.i ? regex.source.toLowerCase() : regex.source;
-    let pattern = "";
-    let isEscaped = false;
-    let inCharGroup = false;
-    let inCharRange = false;
-    for (let i = 0; i < source.length; i++) {
-        if (isEscaped) {
-            pattern += source[i];
-            isEscaped = false;
-            continue;
-        }
-        if (flags.i) {
-            if (inCharGroup) {
-                if (source[i].match(/[a-z]/)) {
-                    if (inCharRange) {
-                        pattern += source[i];
-                        pattern += `${source[i - 2]}-${source[i]}`.toUpperCase();
-                        inCharRange = false;
-                    }
-                    else if (source[i + 1] === "-" && source[i + 2]?.match(/[a-z]/)) {
-                        pattern += source[i];
-                        inCharRange = true;
-                    }
-                    else {
-                        pattern += `${source[i]}${source[i].toUpperCase()}`;
-                    }
-                    continue;
-                }
-            }
-            else if (source[i].match(/[a-z]/)) {
-                pattern += `[${source[i]}${source[i].toUpperCase()}]`;
-                continue;
-            }
-        }
-        if (flags.m) {
-            if (source[i] === "^") {
-                pattern += `(^|(?<=[\r\n]))`;
-                continue;
-            }
-            else if (source[i] === "$") {
-                pattern += `($|(?=[\r\n]))`;
-                continue;
-            }
-        }
-        if (flags.s && source[i] === ".") {
-            pattern += inCharGroup ? `${source[i]}\r\n` : `[${source[i]}\r\n]`;
-            continue;
-        }
-        pattern += source[i];
-        if (source[i] === "\\") {
-            isEscaped = true;
-        }
-        else if (inCharGroup && source[i] === "]") {
-            inCharGroup = false;
-        }
-        else if (!inCharGroup && source[i] === "[") {
-            inCharGroup = true;
-        }
-    }
-    return pattern;
-}
-
-function parseRecordDef(def, refs) {
-    if (refs.target === "openAi") {
-        console.warn("Warning: OpenAI may not support records in schemas! Try an array of key-value pairs instead.");
-    }
-    if (refs.target === "openApi3" &&
-        def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodEnum) {
-        return {
-            type: "object",
-            required: def.keyType._def.values,
-            properties: def.keyType._def.values.reduce((acc, key) => ({
-                ...acc,
-                [key]: parseDef(def.valueType._def, {
-                    ...refs,
-                    currentPath: [...refs.currentPath, "properties", key],
-                }) ?? parseAnyDef(refs),
-            }), {}),
-            additionalProperties: refs.rejectedAdditionalProperties,
-        };
-    }
-    const schema = {
-        type: "object",
-        additionalProperties: parseDef(def.valueType._def, {
-            ...refs,
-            currentPath: [...refs.currentPath, "additionalProperties"],
-        }) ?? refs.allowedAdditionalProperties,
-    };
-    if (refs.target === "openApi3") {
-        return schema;
-    }
-    if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodString &&
-        def.keyType._def.checks?.length) {
-        const { type, ...keyType } = parseStringDef(def.keyType._def, refs);
-        return {
-            ...schema,
-            propertyNames: keyType,
-        };
-    }
-    else if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodEnum) {
-        return {
-            ...schema,
-            propertyNames: {
-                enum: def.keyType._def.values,
-            },
-        };
-    }
-    else if (def.keyType?._def.typeName === ZodFirstPartyTypeKind.ZodBranded &&
-        def.keyType._def.type._def.typeName === ZodFirstPartyTypeKind.ZodString &&
-        def.keyType._def.type._def.checks?.length) {
-        const { type, ...keyType } = parseBrandedDef(def.keyType._def, refs);
-        return {
-            ...schema,
-            propertyNames: keyType,
-        };
-    }
-    return schema;
-}
-
-function parseMapDef(def, refs) {
-    if (refs.mapStrategy === "record") {
-        return parseRecordDef(def, refs);
-    }
-    const keys = parseDef(def.keyType._def, {
-        ...refs,
-        currentPath: [...refs.currentPath, "items", "items", "0"],
-    }) || parseAnyDef(refs);
-    const values = parseDef(def.valueType._def, {
-        ...refs,
-        currentPath: [...refs.currentPath, "items", "items", "1"],
-    }) || parseAnyDef(refs);
-    return {
-        type: "array",
-        maxItems: 125,
-        items: {
-            type: "array",
-            items: [keys, values],
-            minItems: 2,
-            maxItems: 2,
-        },
-    };
-}
-
-function parseNativeEnumDef(def) {
-    const object = def.values;
-    const actualKeys = Object.keys(def.values).filter((key) => {
-        return typeof object[object[key]] !== "number";
-    });
-    const actualValues = actualKeys.map((key) => object[key]);
-    const parsedTypes = Array.from(new Set(actualValues.map((values) => typeof values)));
-    return {
-        type: parsedTypes.length === 1
-            ? parsedTypes[0] === "string"
-                ? "string"
-                : "number"
-            : ["string", "number"],
-        enum: actualValues,
-    };
-}
-
-function parseNeverDef(refs) {
-    return refs.target === "openAi"
-        ? undefined
-        : {
-            not: parseAnyDef({
-                ...refs,
-                currentPath: [...refs.currentPath, "not"],
-            }),
-        };
-}
-
-function parseNullDef(refs) {
-    return refs.target === "openApi3"
-        ? {
-            enum: ["null"],
-            nullable: true,
-        }
-        : {
-            type: "null",
-        };
-}
-
-const primitiveMappings = {
-    ZodString: "string",
-    ZodNumber: "number",
-    ZodBigInt: "integer",
-    ZodBoolean: "boolean",
-    ZodNull: "null",
-};
-function parseUnionDef(def, refs) {
-    if (refs.target === "openApi3")
-        return asAnyOf(def, refs);
-    const options = def.options instanceof Map ? Array.from(def.options.values()) : def.options;
-    // This blocks tries to look ahead a bit to produce nicer looking schemas with type array instead of anyOf.
-    if (options.every((x) => x._def.typeName in primitiveMappings &&
-        (!x._def.checks || !x._def.checks.length))) {
-        // all types in union are primitive and lack checks, so might as well squash into {type: [...]}
-        const types = options.reduce((types, x) => {
-            const type = primitiveMappings[x._def.typeName]; //Can be safely casted due to row 43
-            return type && !types.includes(type) ? [...types, type] : types;
-        }, []);
-        return {
-            type: types.length > 1 ? types : types[0],
-        };
-    }
-    else if (options.every((x) => x._def.typeName === "ZodLiteral" && !x.description)) {
-        // all options literals
-        const types = options.reduce((acc, x) => {
-            const type = typeof x._def.value;
-            switch (type) {
-                case "string":
-                case "number":
-                case "boolean":
-                    return [...acc, type];
-                case "bigint":
-                    return [...acc, "integer"];
-                case "object":
-                    if (x._def.value === null)
-                        return [...acc, "null"];
-                case "symbol":
-                case "undefined":
-                case "function":
-                default:
-                    return acc;
-            }
-        }, []);
-        if (types.length === options.length) {
-            // all the literals are primitive, as far as null can be considered primitive
-            const uniqueTypes = types.filter((x, i, a) => a.indexOf(x) === i);
-            return {
-                type: uniqueTypes.length > 1 ? uniqueTypes : uniqueTypes[0],
-                enum: options.reduce((acc, x) => {
-                    return acc.includes(x._def.value) ? acc : [...acc, x._def.value];
-                }, []),
-            };
-        }
-    }
-    else if (options.every((x) => x._def.typeName === "ZodEnum")) {
-        return {
-            type: "string",
-            enum: options.reduce((acc, x) => [
-                ...acc,
-                ...x._def.values.filter((x) => !acc.includes(x)),
-            ], []),
-        };
-    }
-    return asAnyOf(def, refs);
-}
-const asAnyOf = (def, refs) => {
-    const anyOf = (def.options instanceof Map
-        ? Array.from(def.options.values())
-        : def.options)
-        .map((x, i) => parseDef(x._def, {
-        ...refs,
-        currentPath: [...refs.currentPath, "anyOf", `${i}`],
-    }))
-        .filter((x) => !!x &&
-        (!refs.strictUnions ||
-            (typeof x === "object" && Object.keys(x).length > 0)));
-    return anyOf.length ? { anyOf } : undefined;
-};
-
-function parseNullableDef(def, refs) {
-    if (["ZodString", "ZodNumber", "ZodBigInt", "ZodBoolean", "ZodNull"].includes(def.innerType._def.typeName) &&
-        (!def.innerType._def.checks || !def.innerType._def.checks.length)) {
-        if (refs.target === "openApi3") {
-            return {
-                type: primitiveMappings[def.innerType._def.typeName],
-                nullable: true,
-            };
-        }
-        return {
-            type: [
-                primitiveMappings[def.innerType._def.typeName],
-                "null",
-            ],
-        };
-    }
-    if (refs.target === "openApi3") {
-        const base = parseDef(def.innerType._def, {
-            ...refs,
-            currentPath: [...refs.currentPath],
-        });
-        if (base && "$ref" in base)
-            return { allOf: [base], nullable: true };
-        return base && { ...base, nullable: true };
-    }
-    const base = parseDef(def.innerType._def, {
-        ...refs,
-        currentPath: [...refs.currentPath, "anyOf", "0"],
-    });
-    return base && { anyOf: [base, { type: "null" }] };
-}
-
-function parseNumberDef(def, refs) {
-    const res = {
-        type: "number",
-    };
-    if (!def.checks)
-        return res;
-    for (const check of def.checks) {
-        switch (check.kind) {
-            case "int":
-                res.type = "integer";
-                addErrorMessage(res, "type", check.message, refs);
-                break;
-            case "min":
-                if (refs.target === "jsonSchema7") {
-                    if (check.inclusive) {
-                        setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
-                    }
-                    else {
-                        setResponseValueAndErrors(res, "exclusiveMinimum", check.value, check.message, refs);
-                    }
-                }
-                else {
-                    if (!check.inclusive) {
-                        res.exclusiveMinimum = true;
-                    }
-                    setResponseValueAndErrors(res, "minimum", check.value, check.message, refs);
-                }
-                break;
-            case "max":
-                if (refs.target === "jsonSchema7") {
-                    if (check.inclusive) {
-                        setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
-                    }
-                    else {
-                        setResponseValueAndErrors(res, "exclusiveMaximum", check.value, check.message, refs);
-                    }
-                }
-                else {
-                    if (!check.inclusive) {
-                        res.exclusiveMaximum = true;
-                    }
-                    setResponseValueAndErrors(res, "maximum", check.value, check.message, refs);
-                }
-                break;
-            case "multipleOf":
-                setResponseValueAndErrors(res, "multipleOf", check.value, check.message, refs);
-                break;
-        }
-    }
-    return res;
-}
-
-function parseObjectDef(def, refs) {
-    const forceOptionalIntoNullable = refs.target === "openAi";
-    const result = {
-        type: "object",
-        properties: {},
-    };
-    const required = [];
-    const shape = def.shape();
-    for (const propName in shape) {
-        let propDef = shape[propName];
-        if (propDef === undefined || propDef._def === undefined) {
-            continue;
-        }
-        let propOptional = safeIsOptional(propDef);
-        if (propOptional && forceOptionalIntoNullable) {
-            if (propDef._def.typeName === "ZodOptional") {
-                propDef = propDef._def.innerType;
-            }
-            if (!propDef.isNullable()) {
-                propDef = propDef.nullable();
-            }
-            propOptional = false;
-        }
-        const parsedDef = parseDef(propDef._def, {
-            ...refs,
-            currentPath: [...refs.currentPath, "properties", propName],
-            propertyPath: [...refs.currentPath, "properties", propName],
-        });
-        if (parsedDef === undefined) {
-            continue;
-        }
-        result.properties[propName] = parsedDef;
-        if (!propOptional) {
-            required.push(propName);
-        }
-    }
-    if (required.length) {
-        result.required = required;
-    }
-    const additionalProperties = decideAdditionalProperties(def, refs);
-    if (additionalProperties !== undefined) {
-        result.additionalProperties = additionalProperties;
-    }
-    return result;
-}
-function decideAdditionalProperties(def, refs) {
-    if (def.catchall._def.typeName !== "ZodNever") {
-        return parseDef(def.catchall._def, {
-            ...refs,
-            currentPath: [...refs.currentPath, "additionalProperties"],
-        });
-    }
-    switch (def.unknownKeys) {
-        case "passthrough":
-            return refs.allowedAdditionalProperties;
-        case "strict":
-            return refs.rejectedAdditionalProperties;
-        case "strip":
-            return refs.removeAdditionalStrategy === "strict"
-                ? refs.allowedAdditionalProperties
-                : refs.rejectedAdditionalProperties;
-    }
-}
-function safeIsOptional(schema) {
-    try {
-        return schema.isOptional();
-    }
-    catch {
-        return true;
-    }
-}
-
-const parseOptionalDef = (def, refs) => {
-    if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
-        return parseDef(def.innerType._def, refs);
-    }
-    const innerSchema = parseDef(def.innerType._def, {
-        ...refs,
-        currentPath: [...refs.currentPath, "anyOf", "1"],
-    });
-    return innerSchema
-        ? {
-            anyOf: [
-                {
-                    not: parseAnyDef(refs),
-                },
-                innerSchema,
-            ],
-        }
-        : parseAnyDef(refs);
-};
-
-const parsePipelineDef = (def, refs) => {
-    if (refs.pipeStrategy === "input") {
-        return parseDef(def.in._def, refs);
-    }
-    else if (refs.pipeStrategy === "output") {
-        return parseDef(def.out._def, refs);
-    }
-    const a = parseDef(def.in._def, {
-        ...refs,
-        currentPath: [...refs.currentPath, "allOf", "0"],
-    });
-    const b = parseDef(def.out._def, {
-        ...refs,
-        currentPath: [...refs.currentPath, "allOf", a ? "1" : "0"],
-    });
-    return {
-        allOf: [a, b].filter((x) => x !== undefined),
-    };
-};
-
-function parsePromiseDef(def, refs) {
-    return parseDef(def.type._def, refs);
-}
-
-function parseSetDef(def, refs) {
-    const items = parseDef(def.valueType._def, {
-        ...refs,
-        currentPath: [...refs.currentPath, "items"],
-    });
-    const schema = {
-        type: "array",
-        uniqueItems: true,
-        items,
-    };
-    if (def.minSize) {
-        setResponseValueAndErrors(schema, "minItems", def.minSize.value, def.minSize.message, refs);
-    }
-    if (def.maxSize) {
-        setResponseValueAndErrors(schema, "maxItems", def.maxSize.value, def.maxSize.message, refs);
-    }
-    return schema;
-}
-
-function parseTupleDef(def, refs) {
-    if (def.rest) {
-        return {
-            type: "array",
-            minItems: def.items.length,
-            items: def.items
-                .map((x, i) => parseDef(x._def, {
-                ...refs,
-                currentPath: [...refs.currentPath, "items", `${i}`],
-            }))
-                .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
-            additionalItems: parseDef(def.rest._def, {
-                ...refs,
-                currentPath: [...refs.currentPath, "additionalItems"],
-            }),
-        };
-    }
-    else {
-        return {
-            type: "array",
-            minItems: def.items.length,
-            maxItems: def.items.length,
-            items: def.items
-                .map((x, i) => parseDef(x._def, {
-                ...refs,
-                currentPath: [...refs.currentPath, "items", `${i}`],
-            }))
-                .reduce((acc, x) => (x === undefined ? acc : [...acc, x]), []),
-        };
-    }
-}
-
-function parseUndefinedDef(refs) {
-    return {
-        not: parseAnyDef(refs),
-    };
-}
-
-function parseUnknownDef(refs) {
-    return parseAnyDef(refs);
-}
-
-const parseReadonlyDef = (def, refs) => {
-    return parseDef(def.innerType._def, refs);
-};
-
-const selectParser = (def, typeName, refs) => {
-    switch (typeName) {
-        case ZodFirstPartyTypeKind.ZodString:
-            return parseStringDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodNumber:
-            return parseNumberDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodObject:
-            return parseObjectDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodBigInt:
-            return parseBigintDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodBoolean:
-            return parseBooleanDef();
-        case ZodFirstPartyTypeKind.ZodDate:
-            return parseDateDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodUndefined:
-            return parseUndefinedDef(refs);
-        case ZodFirstPartyTypeKind.ZodNull:
-            return parseNullDef(refs);
-        case ZodFirstPartyTypeKind.ZodArray:
-            return parseArrayDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodUnion:
-        case ZodFirstPartyTypeKind.ZodDiscriminatedUnion:
-            return parseUnionDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodIntersection:
-            return parseIntersectionDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodTuple:
-            return parseTupleDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodRecord:
-            return parseRecordDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodLiteral:
-            return parseLiteralDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodEnum:
-            return parseEnumDef(def);
-        case ZodFirstPartyTypeKind.ZodNativeEnum:
-            return parseNativeEnumDef(def);
-        case ZodFirstPartyTypeKind.ZodNullable:
-            return parseNullableDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodOptional:
-            return parseOptionalDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodMap:
-            return parseMapDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodSet:
-            return parseSetDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodLazy:
-            return () => def.getter()._def;
-        case ZodFirstPartyTypeKind.ZodPromise:
-            return parsePromiseDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodNaN:
-        case ZodFirstPartyTypeKind.ZodNever:
-            return parseNeverDef(refs);
-        case ZodFirstPartyTypeKind.ZodEffects:
-            return parseEffectsDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodAny:
-            return parseAnyDef(refs);
-        case ZodFirstPartyTypeKind.ZodUnknown:
-            return parseUnknownDef(refs);
-        case ZodFirstPartyTypeKind.ZodDefault:
-            return parseDefaultDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodBranded:
-            return parseBrandedDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodReadonly:
-            return parseReadonlyDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodCatch:
-            return parseCatchDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodPipeline:
-            return parsePipelineDef(def, refs);
-        case ZodFirstPartyTypeKind.ZodFunction:
-        case ZodFirstPartyTypeKind.ZodVoid:
-        case ZodFirstPartyTypeKind.ZodSymbol:
-            return undefined;
-        default:
-            /* c8 ignore next */
-            return ((_) => undefined)();
-    }
-};
-
-function parseDef(def, refs, forceResolution = false) {
-    const seenItem = refs.seen.get(def);
-    if (refs.override) {
-        const overrideResult = refs.override?.(def, refs, seenItem, forceResolution);
-        if (overrideResult !== ignoreOverride) {
-            return overrideResult;
-        }
-    }
-    if (seenItem && !forceResolution) {
-        const seenSchema = get$ref(seenItem, refs);
-        if (seenSchema !== undefined) {
-            return seenSchema;
-        }
-    }
-    const newItem = { def, path: refs.currentPath, jsonSchema: undefined };
-    refs.seen.set(def, newItem);
-    const jsonSchemaOrGetter = selectParser(def, def.typeName, refs);
-    // If the return was a function, then the inner definition needs to be extracted before a call to parseDef (recursive)
-    const jsonSchema = typeof jsonSchemaOrGetter === "function"
-        ? parseDef(jsonSchemaOrGetter(), refs)
-        : jsonSchemaOrGetter;
-    if (jsonSchema) {
-        addMeta(def, refs, jsonSchema);
-    }
-    if (refs.postProcess) {
-        const postProcessResult = refs.postProcess(jsonSchema, def, refs);
-        newItem.jsonSchema = jsonSchema;
-        return postProcessResult;
-    }
-    newItem.jsonSchema = jsonSchema;
-    return jsonSchema;
-}
-const get$ref = (item, refs) => {
-    switch (refs.$refStrategy) {
-        case "root":
-            return { $ref: item.path.join("/") };
-        case "relative":
-            return { $ref: getRelativePath(refs.currentPath, item.path) };
-        case "none":
-        case "seen": {
-            if (item.path.length < refs.currentPath.length &&
-                item.path.every((value, index) => refs.currentPath[index] === value)) {
-                console.warn(`Recursive reference detected at ${refs.currentPath.join("/")}! Defaulting to any`);
-                return parseAnyDef(refs);
-            }
-            return refs.$refStrategy === "seen" ? parseAnyDef(refs) : undefined;
-        }
-    }
-};
-const addMeta = (def, refs, jsonSchema) => {
-    if (def.description) {
-        jsonSchema.description = def.description;
-        if (refs.markdownDescription) {
-            jsonSchema.markdownDescription = def.description;
-        }
-    }
-    return jsonSchema;
-};
-
-const zodToJsonSchema = (schema, options) => {
-    const refs = getRefs(options);
-    let definitions = typeof options === "object" && options.definitions
-        ? Object.entries(options.definitions).reduce((acc, [name, schema]) => ({
-            ...acc,
-            [name]: parseDef(schema._def, {
-                ...refs,
-                currentPath: [...refs.basePath, refs.definitionPath, name],
-            }, true) ?? parseAnyDef(refs),
-        }), {})
-        : undefined;
-    const name = typeof options === "string"
-        ? options
-        : options?.nameStrategy === "title"
-            ? undefined
-            : options?.name;
-    const main = parseDef(schema._def, name === undefined
-        ? refs
-        : {
-            ...refs,
-            currentPath: [...refs.basePath, refs.definitionPath, name],
-        }, false) ?? parseAnyDef(refs);
-    const title = typeof options === "object" &&
-        options.name !== undefined &&
-        options.nameStrategy === "title"
-        ? options.name
-        : undefined;
-    if (title !== undefined) {
-        main.title = title;
-    }
-    if (refs.flags.hasReferencedOpenAiAnyType) {
-        if (!definitions) {
-            definitions = {};
-        }
-        if (!definitions[refs.openAiAnyTypeName]) {
-            definitions[refs.openAiAnyTypeName] = {
-                // Skipping "object" as no properties can be defined and additionalProperties must be "false"
-                type: ["string", "number", "integer", "boolean", "array", "null"],
-                items: {
-                    $ref: refs.$refStrategy === "relative"
-                        ? "1"
-                        : [
-                            ...refs.basePath,
-                            refs.definitionPath,
-                            refs.openAiAnyTypeName,
-                        ].join("/"),
-                },
-            };
-        }
-    }
-    const combined = name === undefined
-        ? definitions
-            ? {
-                ...main,
-                [refs.definitionPath]: definitions,
-            }
-            : main
-        : {
-            $ref: [
-                ...(refs.$refStrategy === "relative" ? [] : refs.basePath),
-                refs.definitionPath,
-                name,
-            ].join("/"),
-            [refs.definitionPath]: {
-                ...definitions,
-                [name]: main,
-            },
-        };
-    if (refs.target === "jsonSchema7") {
-        combined.$schema = "http://json-schema.org/draft-07/schema#";
-    }
-    else if (refs.target === "jsonSchema2019-09" || refs.target === "openAi") {
-        combined.$schema = "https://json-schema.org/draft/2019-09/schema#";
-    }
-    if (refs.target === "openAi" &&
-        ("anyOf" in combined ||
-            "oneOf" in combined ||
-            "allOf" in combined ||
-            ("type" in combined && Array.isArray(combined.type)))) {
-        console.warn("Warning: OpenAI may not support schemas with unions as roots! Try wrapping it in an object property.");
-    }
-    return combined;
 };
 
 // src/errors/ai-sdk-error.ts
@@ -3930,11 +2582,11 @@ var InvalidDataContentError = class extends AISDKError {
   }
 };
 _a6 = symbol6;
-var dataContentSchema = union([
-  string(),
-  _instanceof(Uint8Array),
-  _instanceof(ArrayBuffer),
-  custom(
+var dataContentSchema = z.union([
+  z.string(),
+  z.instanceof(Uint8Array),
+  z.instanceof(ArrayBuffer),
+  z.custom(
     // Buffer might not be available in some environments such as CloudFlare:
     (value) => {
       var _a17, _b;
@@ -4669,108 +3321,108 @@ function convertToCoreMessages(messages, options) {
   }
   return coreMessages;
 }
-var jsonValueSchema = lazy(
-  () => union([
-    _null(),
-    string(),
-    number(),
-    boolean(),
-    record(string(), jsonValueSchema),
-    array(jsonValueSchema)
+var jsonValueSchema = z.lazy(
+  () => z.union([
+    z.null(),
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.record(z.string(), jsonValueSchema),
+    z.array(jsonValueSchema)
   ])
 );
 
 // core/types/provider-metadata.ts
-var providerMetadataSchema = record(
-  string(),
-  record(string(), jsonValueSchema)
+var providerMetadataSchema = z.record(
+  z.string(),
+  z.record(z.string(), jsonValueSchema)
 );
-var toolResultContentSchema = array(
-  union([
-    object$1({ type: literal("text"), text: string() }),
-    object$1({
-      type: literal("image"),
-      data: string(),
-      mimeType: string().optional()
+var toolResultContentSchema = z.array(
+  z.union([
+    z.object({ type: z.literal("text"), text: z.string() }),
+    z.object({
+      type: z.literal("image"),
+      data: z.string(),
+      mimeType: z.string().optional()
     })
   ])
 );
 
 // core/prompt/content-part.ts
-var textPartSchema = object$1({
-  type: literal("text"),
-  text: string(),
+var textPartSchema = z.object({
+  type: z.literal("text"),
+  text: z.string(),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var imagePartSchema = object$1({
-  type: literal("image"),
-  image: union([dataContentSchema, _instanceof(URL)]),
-  mimeType: string().optional(),
+var imagePartSchema = z.object({
+  type: z.literal("image"),
+  image: z.union([dataContentSchema, z.instanceof(URL)]),
+  mimeType: z.string().optional(),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var filePartSchema = object$1({
-  type: literal("file"),
-  data: union([dataContentSchema, _instanceof(URL)]),
-  filename: string().optional(),
-  mimeType: string(),
+var filePartSchema = z.object({
+  type: z.literal("file"),
+  data: z.union([dataContentSchema, z.instanceof(URL)]),
+  filename: z.string().optional(),
+  mimeType: z.string(),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var reasoningPartSchema = object$1({
-  type: literal("reasoning"),
-  text: string(),
+var reasoningPartSchema = z.object({
+  type: z.literal("reasoning"),
+  text: z.string(),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var redactedReasoningPartSchema = object$1({
-  type: literal("redacted-reasoning"),
-  data: string(),
+var redactedReasoningPartSchema = z.object({
+  type: z.literal("redacted-reasoning"),
+  data: z.string(),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var toolCallPartSchema = object$1({
-  type: literal("tool-call"),
-  toolCallId: string(),
-  toolName: string(),
-  args: unknown(),
+var toolCallPartSchema = z.object({
+  type: z.literal("tool-call"),
+  toolCallId: z.string(),
+  toolName: z.string(),
+  args: z.unknown(),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var toolResultPartSchema = object$1({
-  type: literal("tool-result"),
-  toolCallId: string(),
-  toolName: string(),
-  result: unknown(),
+var toolResultPartSchema = z.object({
+  type: z.literal("tool-result"),
+  toolCallId: z.string(),
+  toolName: z.string(),
+  result: z.unknown(),
   content: toolResultContentSchema.optional(),
-  isError: boolean().optional(),
+  isError: z.boolean().optional(),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
 
 // core/prompt/message.ts
-var coreSystemMessageSchema = object$1({
-  role: literal("system"),
-  content: string(),
+var coreSystemMessageSchema = z.object({
+  role: z.literal("system"),
+  content: z.string(),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var coreUserMessageSchema = object$1({
-  role: literal("user"),
-  content: union([
-    string(),
-    array(union([textPartSchema, imagePartSchema, filePartSchema]))
+var coreUserMessageSchema = z.object({
+  role: z.literal("user"),
+  content: z.union([
+    z.string(),
+    z.array(z.union([textPartSchema, imagePartSchema, filePartSchema]))
   ]),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var coreAssistantMessageSchema = object$1({
-  role: literal("assistant"),
-  content: union([
-    string(),
-    array(
-      union([
+var coreAssistantMessageSchema = z.object({
+  role: z.literal("assistant"),
+  content: z.union([
+    z.string(),
+    z.array(
+      z.union([
         textPartSchema,
         filePartSchema,
         reasoningPartSchema,
@@ -4782,13 +3434,13 @@ var coreAssistantMessageSchema = object$1({
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var coreToolMessageSchema = object$1({
-  role: literal("tool"),
-  content: array(toolResultPartSchema),
+var coreToolMessageSchema = z.object({
+  role: z.literal("tool"),
+  content: z.array(toolResultPartSchema),
   providerOptions: providerMetadataSchema.optional(),
   experimental_providerMetadata: providerMetadataSchema.optional()
 });
-var coreMessageSchema = union([
+var coreMessageSchema = z.union([
   coreSystemMessageSchema,
   coreUserMessageSchema,
   coreAssistantMessageSchema,
@@ -4849,7 +3501,7 @@ function standardizePrompt({
     }
     const validationResult = safeValidateTypes({
       value: messages,
-      schema: array(coreMessageSchema)
+      schema: z.array(coreMessageSchema)
     });
     if (!validationResult.success) {
       throw new InvalidPromptError({
@@ -8944,127 +7596,127 @@ var DefaultStreamTextResult = class {
     });
   }
 };
-var ClientOrServerImplementationSchema = object$1({
-  name: string(),
-  version: string()
+var ClientOrServerImplementationSchema = z.object({
+  name: z.string(),
+  version: z.string()
 }).passthrough();
-var BaseParamsSchema = object$1({
-  _meta: optional(object$1({}).passthrough())
+var BaseParamsSchema = z.object({
+  _meta: z.optional(z.object({}).passthrough())
 }).passthrough();
 var ResultSchema = BaseParamsSchema;
-var RequestSchema = object$1({
-  method: string(),
-  params: optional(BaseParamsSchema)
+var RequestSchema = z.object({
+  method: z.string(),
+  params: z.optional(BaseParamsSchema)
 });
-var ServerCapabilitiesSchema = object$1({
-  experimental: optional(object$1({}).passthrough()),
-  logging: optional(object$1({}).passthrough()),
-  prompts: optional(
-    object$1({
-      listChanged: optional(boolean())
+var ServerCapabilitiesSchema = z.object({
+  experimental: z.optional(z.object({}).passthrough()),
+  logging: z.optional(z.object({}).passthrough()),
+  prompts: z.optional(
+    z.object({
+      listChanged: z.optional(z.boolean())
     }).passthrough()
   ),
-  resources: optional(
-    object$1({
-      subscribe: optional(boolean()),
-      listChanged: optional(boolean())
+  resources: z.optional(
+    z.object({
+      subscribe: z.optional(z.boolean()),
+      listChanged: z.optional(z.boolean())
     }).passthrough()
   ),
-  tools: optional(
-    object$1({
-      listChanged: optional(boolean())
+  tools: z.optional(
+    z.object({
+      listChanged: z.optional(z.boolean())
     }).passthrough()
   )
 }).passthrough();
 ResultSchema.extend({
-  protocolVersion: string(),
+  protocolVersion: z.string(),
   capabilities: ServerCapabilitiesSchema,
   serverInfo: ClientOrServerImplementationSchema,
-  instructions: optional(string())
+  instructions: z.optional(z.string())
 });
 var PaginatedResultSchema = ResultSchema.extend({
-  nextCursor: optional(string())
+  nextCursor: z.optional(z.string())
 });
-var ToolSchema = object$1({
-  name: string(),
-  description: optional(string()),
-  inputSchema: object$1({
-    type: literal("object"),
-    properties: optional(object$1({}).passthrough())
+var ToolSchema = z.object({
+  name: z.string(),
+  description: z.optional(z.string()),
+  inputSchema: z.object({
+    type: z.literal("object"),
+    properties: z.optional(z.object({}).passthrough())
   }).passthrough()
 }).passthrough();
 PaginatedResultSchema.extend({
-  tools: array(ToolSchema)
+  tools: z.array(ToolSchema)
 });
-var TextContentSchema = object$1({
-  type: literal("text"),
-  text: string()
+var TextContentSchema = z.object({
+  type: z.literal("text"),
+  text: z.string()
 }).passthrough();
-var ImageContentSchema = object$1({
-  type: literal("image"),
-  data: string().base64(),
-  mimeType: string()
+var ImageContentSchema = z.object({
+  type: z.literal("image"),
+  data: z.string().base64(),
+  mimeType: z.string()
 }).passthrough();
-var ResourceContentsSchema = object$1({
+var ResourceContentsSchema = z.object({
   /**
    * The URI of this resource.
    */
-  uri: string(),
+  uri: z.string(),
   /**
    * The MIME type of this resource, if known.
    */
-  mimeType: optional(string())
+  mimeType: z.optional(z.string())
 }).passthrough();
 var TextResourceContentsSchema = ResourceContentsSchema.extend({
-  text: string()
+  text: z.string()
 });
 var BlobResourceContentsSchema = ResourceContentsSchema.extend({
-  blob: string().base64()
+  blob: z.string().base64()
 });
-var EmbeddedResourceSchema = object$1({
-  type: literal("resource"),
-  resource: union([TextResourceContentsSchema, BlobResourceContentsSchema])
+var EmbeddedResourceSchema = z.object({
+  type: z.literal("resource"),
+  resource: z.union([TextResourceContentsSchema, BlobResourceContentsSchema])
 }).passthrough();
 ResultSchema.extend({
-  content: array(
-    union([TextContentSchema, ImageContentSchema, EmbeddedResourceSchema])
+  content: z.array(
+    z.union([TextContentSchema, ImageContentSchema, EmbeddedResourceSchema])
   ),
-  isError: boolean().default(false).optional()
+  isError: z.boolean().default(false).optional()
 }).or(
   ResultSchema.extend({
-    toolResult: unknown()
+    toolResult: z.unknown()
   })
 );
 
 // core/tool/mcp/json-rpc-message.ts
 var JSONRPC_VERSION = "2.0";
-var JSONRPCRequestSchema = object$1({
-  jsonrpc: literal(JSONRPC_VERSION),
-  id: union([string(), number().int()])
+var JSONRPCRequestSchema = z.object({
+  jsonrpc: z.literal(JSONRPC_VERSION),
+  id: z.union([z.string(), z.number().int()])
 }).merge(RequestSchema).strict();
-var JSONRPCResponseSchema = object$1({
-  jsonrpc: literal(JSONRPC_VERSION),
-  id: union([string(), number().int()]),
+var JSONRPCResponseSchema = z.object({
+  jsonrpc: z.literal(JSONRPC_VERSION),
+  id: z.union([z.string(), z.number().int()]),
   result: ResultSchema
 }).strict();
-var JSONRPCErrorSchema = object$1({
-  jsonrpc: literal(JSONRPC_VERSION),
-  id: union([string(), number().int()]),
-  error: object$1({
-    code: number().int(),
-    message: string(),
-    data: optional(unknown())
+var JSONRPCErrorSchema = z.object({
+  jsonrpc: z.literal(JSONRPC_VERSION),
+  id: z.union([z.string(), z.number().int()]),
+  error: z.object({
+    code: z.number().int(),
+    message: z.string(),
+    data: z.optional(z.unknown())
   })
 }).strict();
-var JSONRPCNotificationSchema = object$1({
-  jsonrpc: literal(JSONRPC_VERSION)
+var JSONRPCNotificationSchema = z.object({
+  jsonrpc: z.literal(JSONRPC_VERSION)
 }).merge(
-  object$1({
-    method: string(),
-    params: optional(BaseParamsSchema)
+  z.object({
+    method: z.string(),
+    params: z.optional(BaseParamsSchema)
   })
 ).strict();
-union([
+z.union([
   JSONRPCRequestSchema,
   JSONRPCNotificationSchema,
   JSONRPCResponseSchema,
@@ -9514,7 +8166,7 @@ var ItemsHandler = class {
     if (Array.isArray(arraySchema.items)) {
       types.array = types.array || array(any());
     } else if (arraySchema.items && typeof arraySchema.items !== "boolean" && !arraySchema.prefixItems) {
-      const itemSchema = convertJsonSchemaToZod(arraySchema.items);
+      const itemSchema = convertJsonSchemaToZod$1(arraySchema.items);
       let newArray = array(itemSchema);
       if (types.array && types.array instanceof ZodArray) {
         const existingDef = types.array._def;
@@ -9551,7 +8203,7 @@ var TupleHandler = class {
     const arraySchema = schema;
     if (!Array.isArray(arraySchema.items)) return;
     if (types.array === false) return;
-    const itemSchemas = arraySchema.items.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
+    const itemSchemas = arraySchema.items.map((itemSchema) => convertJsonSchemaToZod$1(itemSchema));
     let tuple$1;
     if (itemSchemas.length === 0) {
       tuple$1 = tuple([]);
@@ -9655,7 +8307,7 @@ function isValidWithSchema(schema, value) {
 var NotHandler = class {
   apply(zodSchema, schema) {
     if (!schema.not) return zodSchema;
-    const notSchema = convertJsonSchemaToZod(schema.not);
+    const notSchema = convertJsonSchemaToZod$1(schema.not);
     return zodSchema.refine(
       (value) => !isValidWithSchema(notSchema, value),
       { message: "Value must not match the 'not' schema" }
@@ -9676,7 +8328,7 @@ var UniqueItemsHandler = class {
 var AllOfHandler = class {
   apply(zodSchema, schema) {
     if (!schema.allOf || schema.allOf.length === 0) return zodSchema;
-    const allOfSchemas = schema.allOf.map((s) => convertJsonSchemaToZod(s));
+    const allOfSchemas = schema.allOf.map((s) => convertJsonSchemaToZod$1(s));
     return allOfSchemas.reduce(
       (acc, s) => intersection(acc, s),
       zodSchema
@@ -9686,10 +8338,10 @@ var AllOfHandler = class {
 var AnyOfHandler = class {
   apply(zodSchema, schema) {
     if (!schema.anyOf || schema.anyOf.length === 0) return zodSchema;
-    const anyOfSchema = schema.anyOf.length === 1 ? convertJsonSchemaToZod(schema.anyOf[0]) : union([
-      convertJsonSchemaToZod(schema.anyOf[0]),
-      convertJsonSchemaToZod(schema.anyOf[1]),
-      ...schema.anyOf.slice(2).map((s) => convertJsonSchemaToZod(s))
+    const anyOfSchema = schema.anyOf.length === 1 ? convertJsonSchemaToZod$1(schema.anyOf[0]) : union([
+      convertJsonSchemaToZod$1(schema.anyOf[0]),
+      convertJsonSchemaToZod$1(schema.anyOf[1]),
+      ...schema.anyOf.slice(2).map((s) => convertJsonSchemaToZod$1(s))
     ]);
     return intersection(zodSchema, anyOfSchema);
   }
@@ -9699,7 +8351,7 @@ var AnyOfHandler = class {
 var OneOfHandler = class {
   apply(zodSchema, schema) {
     if (!schema.oneOf || schema.oneOf.length === 0) return zodSchema;
-    const oneOfSchemas = schema.oneOf.map((s) => convertJsonSchemaToZod(s));
+    const oneOfSchemas = schema.oneOf.map((s) => convertJsonSchemaToZod$1(s));
     return zodSchema.refine(
       (value) => {
         let validCount = 0;
@@ -9723,7 +8375,7 @@ var PrefixItemsHandler = class {
     const arraySchema = schema;
     if (arraySchema.prefixItems && Array.isArray(arraySchema.prefixItems)) {
       const prefixItems = arraySchema.prefixItems;
-      const prefixSchemas = prefixItems.map((itemSchema) => convertJsonSchemaToZod(itemSchema));
+      const prefixSchemas = prefixItems.map((itemSchema) => convertJsonSchemaToZod$1(itemSchema));
       return zodSchema.refine(
         (value) => {
           if (!Array.isArray(value)) return true;
@@ -9736,7 +8388,7 @@ var PrefixItemsHandler = class {
             if (typeof arraySchema.items === "boolean" && arraySchema.items === false) {
               return false;
             } else if (arraySchema.items && typeof arraySchema.items === "object" && !Array.isArray(arraySchema.items)) {
-              const additionalItemSchema = convertJsonSchemaToZod(arraySchema.items);
+              const additionalItemSchema = convertJsonSchemaToZod$1(arraySchema.items);
               for (let i = prefixSchemas.length; i < value.length; i++) {
                 if (!isValidWithSchema(additionalItemSchema, value[i])) {
                   return false;
@@ -9763,7 +8415,7 @@ var ObjectPropertiesHandler = class {
       if (objectSchema.properties) {
         for (const [key, propSchema] of Object.entries(objectSchema.properties)) {
           if (propSchema !== void 0) {
-            shape[key] = convertJsonSchemaToZod(propSchema);
+            shape[key] = convertJsonSchemaToZod$1(propSchema);
           }
         }
       }
@@ -9795,7 +8447,7 @@ var ObjectPropertiesHandler = class {
             if (propSchema !== void 0) {
               const propExists = Object.getOwnPropertyDescriptor(value, propName) !== void 0;
               if (propExists) {
-                const zodPropSchema = convertJsonSchemaToZod(propSchema);
+                const zodPropSchema = convertJsonSchemaToZod$1(propSchema);
                 const propResult = zodPropSchema.safeParse(value[propName]);
                 if (!propResult.success) {
                   return false;
@@ -9899,7 +8551,7 @@ var ContainsHandler = class {
     var _a;
     const arraySchema = schema;
     if (arraySchema.contains === void 0) return zodSchema;
-    const containsSchema = convertJsonSchemaToZod(arraySchema.contains);
+    const containsSchema = convertJsonSchemaToZod$1(arraySchema.contains);
     const minContains = (_a = arraySchema.minContains) != null ? _a : 1;
     const maxContains = arraySchema.maxContains;
     return zodSchema.refine(
@@ -9989,7 +8641,7 @@ var refinementHandlers = [
   // Metadata last
   new MetadataHandler()
 ];
-function convertJsonSchemaToZod(schema) {
+function convertJsonSchemaToZod$1(schema) {
   if (typeof schema === "boolean") {
     return schema ? any() : never();
   }
@@ -10047,6 +8699,207 @@ function convertJsonSchemaToZod(schema) {
   return zodSchema;
 }
 
+// src/index.ts
+function convertJsonSchemaToZod(schema) {
+  function addMetadata(zodSchema, jsonSchema) {
+    if (jsonSchema.description) {
+      zodSchema = zodSchema.describe(jsonSchema.description);
+    }
+    return zodSchema;
+  }
+  if (schema.const !== void 0) {
+    if (typeof schema.const === "string") {
+      return addMetadata(z.literal(schema.const), schema);
+    } else if (typeof schema.const === "number") {
+      return addMetadata(z.literal(schema.const), schema);
+    } else if (typeof schema.const === "boolean") {
+      return addMetadata(z.literal(schema.const), schema);
+    } else if (schema.const === null) {
+      return addMetadata(z.null(), schema);
+    }
+    return addMetadata(z.literal(schema.const), schema);
+  }
+  if (schema.type) {
+    switch (schema.type) {
+      case "string": {
+        if (schema.enum) {
+          if (schema.enum.length === 0) {
+            return addMetadata(z.string(), schema);
+          }
+          return addMetadata(z.enum(schema.enum), schema);
+        }
+        let stringSchema = z.string();
+        if (schema.minLength !== void 0) {
+          stringSchema = stringSchema.min(schema.minLength);
+        }
+        if (schema.maxLength !== void 0) {
+          stringSchema = stringSchema.max(schema.maxLength);
+        }
+        if (schema.pattern !== void 0) {
+          const regex = new RegExp(schema.pattern);
+          stringSchema = stringSchema.regex(regex);
+        }
+        return addMetadata(stringSchema, schema);
+      }
+      case "number":
+      case "integer": {
+        if (schema.enum) {
+          if (schema.enum.length === 0) {
+            return addMetadata(z.number(), schema);
+          }
+          const options = schema.enum.map((val) => z.literal(val));
+          if (options.length === 1) {
+            return addMetadata(options[0], schema);
+          }
+          if (options.length >= 2) {
+            const unionSchema = z.union([options[0], options[1], ...options.slice(2)]);
+            return addMetadata(unionSchema, schema);
+          }
+        }
+        let numberSchema = schema.type === "integer" ? z.number().int() : z.number();
+        if (schema.minimum !== void 0) {
+          numberSchema = numberSchema.min(schema.minimum);
+        }
+        if (schema.maximum !== void 0) {
+          numberSchema = numberSchema.max(schema.maximum);
+        }
+        if (schema.exclusiveMinimum !== void 0) {
+          numberSchema = numberSchema.gt(schema.exclusiveMinimum);
+        }
+        if (schema.exclusiveMaximum !== void 0) {
+          numberSchema = numberSchema.lt(schema.exclusiveMaximum);
+        }
+        if (schema.multipleOf !== void 0) {
+          numberSchema = numberSchema.multipleOf(schema.multipleOf);
+        }
+        return addMetadata(numberSchema, schema);
+      }
+      case "boolean":
+        if (schema.enum) {
+          if (schema.enum.length === 0) {
+            return addMetadata(z.boolean(), schema);
+          }
+          const options = schema.enum.map((val) => z.literal(val));
+          if (options.length === 1) {
+            return addMetadata(options[0], schema);
+          }
+          if (options.length >= 2) {
+            const unionSchema = z.union([options[0], options[1], ...options.slice(2)]);
+            return addMetadata(unionSchema, schema);
+          }
+        }
+        return addMetadata(z.boolean(), schema);
+      case "null":
+        return addMetadata(z.null(), schema);
+      case "object":
+        if (schema.properties) {
+          const shape = {};
+          for (const [key, propSchema] of Object.entries(
+            schema.properties
+          )) {
+            shape[key] = convertJsonSchemaToZod(propSchema);
+          }
+          if (schema.required && Array.isArray(schema.required)) {
+            const required = new Set(schema.required);
+            for (const key of Object.keys(shape)) {
+              if (!required.has(key)) {
+                shape[key] = shape[key].optional();
+              }
+            }
+          } else {
+            for (const key of Object.keys(shape)) {
+              shape[key] = shape[key].optional();
+            }
+          }
+          let zodSchema;
+          if (schema.additionalProperties !== false) {
+            zodSchema = z.object(shape).passthrough();
+          } else {
+            zodSchema = z.object(shape);
+          }
+          return addMetadata(zodSchema, schema);
+        }
+        return addMetadata(z.object({}), schema);
+      case "array": {
+        let arraySchema;
+        if (schema.items) {
+          arraySchema = z.array(convertJsonSchemaToZod(schema.items));
+        } else {
+          arraySchema = z.array(z.any());
+        }
+        if (schema.minItems !== void 0) {
+          arraySchema = arraySchema.min(schema.minItems);
+        }
+        if (schema.maxItems !== void 0) {
+          arraySchema = arraySchema.max(schema.maxItems);
+        }
+        if (schema.uniqueItems === true) {
+          arraySchema = arraySchema.refine(
+            (items) => {
+              const seen = /* @__PURE__ */ new Set();
+              return items.every((item) => {
+                if (typeof item === "string" || typeof item === "number" || typeof item === "boolean") {
+                  if (seen.has(item)) return false;
+                  seen.add(item);
+                  return true;
+                }
+                const serialized = JSON.stringify(item);
+                if (seen.has(serialized)) return false;
+                seen.add(serialized);
+                return true;
+              });
+            },
+            { message: "Array items must be unique" }
+          );
+        }
+        return addMetadata(arraySchema, schema);
+      }
+    }
+  }
+  if (schema.enum) {
+    if (schema.enum.length === 0) {
+      return addMetadata(z.never(), schema);
+    }
+    const allStrings = schema.enum.every((val) => typeof val === "string");
+    if (allStrings) {
+      return addMetadata(z.enum(schema.enum), schema);
+    } else {
+      const options = schema.enum.map((val) => z.literal(val));
+      if (options.length === 1) {
+        return addMetadata(options[0], schema);
+      }
+      if (options.length >= 2) {
+        const unionSchema = z.union([options[0], options[1], ...options.slice(2)]);
+        return addMetadata(unionSchema, schema);
+      }
+    }
+  }
+  if (schema.anyOf && schema.anyOf.length >= 2) {
+    const schemas = schema.anyOf.map(convertJsonSchemaToZod);
+    return addMetadata(
+      z.union([schemas[0], schemas[1], ...schemas.slice(2)]),
+      schema
+    );
+  }
+  if (schema.allOf) {
+    return addMetadata(
+      schema.allOf.reduce(
+        (acc, s) => z.intersection(acc, convertJsonSchemaToZod(s)),
+        z.object({})
+      ),
+      schema
+    );
+  }
+  if (schema.oneOf && schema.oneOf.length >= 2) {
+    const schemas = schema.oneOf.map(convertJsonSchemaToZod);
+    return addMetadata(
+      z.union([schemas[0], schemas[1], ...schemas.slice(2)]),
+      schema
+    );
+  }
+  return addMetadata(z.any(), schema);
+}
+
 function convertZodSchemaToAISDKSchema(zodSchema, target = "jsonSchema7") {
   const jsonSchemaToUse = zodToJsonSchema$1(zodSchema, target);
   return jsonSchema(jsonSchemaToUse, {
@@ -10065,7 +8918,9 @@ function convertSchemaToZod(schema) {
   } else {
     const jsonSchemaToConvert = "jsonSchema" in schema ? schema.jsonSchema : schema;
     try {
-      {
+      if ("toJSONSchema" in z) {
+        return convertJsonSchemaToZod$1(jsonSchemaToConvert);
+      } else {
         return convertJsonSchemaToZod(jsonSchemaToConvert);
       }
     } catch (e) {
@@ -10151,7 +9006,7 @@ var SchemaCompatLayer = class {
    * Type guard for object Zod types
    */
   isObj(v) {
-    return v instanceof ZodObject;
+    return v instanceof ZodObject$1;
   }
   /**
    * Type guard for null Zod types
@@ -10163,7 +9018,7 @@ var SchemaCompatLayer = class {
    * Type guard for array Zod types
    */
   isArr(v) {
-    return v instanceof ZodArray;
+    return v instanceof ZodArray$1;
   }
   /**
    * Type guard for union Zod types
@@ -10175,13 +9030,13 @@ var SchemaCompatLayer = class {
    * Type guard for string Zod types
    */
   isString(v) {
-    return v instanceof ZodString;
+    return v instanceof ZodString$1;
   }
   /**
    * Type guard for number Zod types
    */
   isNumber(v) {
-    return v instanceof ZodNumber;
+    return v instanceof ZodNumber$1;
   }
   /**
    * Type guard for date Zod types
@@ -10234,11 +9089,11 @@ var SchemaCompatLayer = class {
       acc[key] = this.processZodType(propValue);
       return acc;
     }, {});
-    let result = object$1(processedShape);
+    let result = z.object(processedShape);
     if (value._def.unknownKeys === "strict") {
       result = result.strict();
     }
-    if (value._def.catchall && !(value._def.catchall instanceof ZodNever)) {
+    if (value._def.catchall && !(value._def.catchall instanceof z.ZodNever)) {
       result = result.catchall(value._def.catchall);
     }
     if (value.description) {
@@ -10290,7 +9145,7 @@ var SchemaCompatLayer = class {
   defaultZodArrayHandler(value, handleChecks = ALL_ARRAY_CHECKS) {
     const zodArrayDef = value._def;
     const processedType = this.processZodType(zodArrayDef.type);
-    let result = array(processedType);
+    let result = z.array(processedType);
     const constraints = [];
     if (zodArrayDef.minLength?.value !== void 0) {
       if (handleChecks.includes("min")) {
@@ -10329,7 +9184,7 @@ var SchemaCompatLayer = class {
   defaultZodUnionHandler(value) {
     const processedOptions = value._def.options.map((option) => this.processZodType(option));
     if (processedOptions.length < 2) throw new Error("Union must have at least 2 options");
-    let result = union(processedOptions);
+    let result = z.union(processedOptions);
     if (value.description) {
       result = result.describe(value.description);
     }
@@ -10373,7 +9228,7 @@ var SchemaCompatLayer = class {
         }
       }
     }
-    let result = string();
+    let result = z.string();
     for (const check of newChecks) {
       result = result._addCheck(check);
     }
@@ -10422,7 +9277,7 @@ var SchemaCompatLayer = class {
         }
       }
     }
-    let result = number();
+    let result = z.number();
     for (const check of newChecks) {
       switch (check.kind) {
         case "int":
@@ -10469,7 +9324,7 @@ var SchemaCompatLayer = class {
       }
     }
     constraints.push(`Date format is date-time`);
-    let result = string().describe("date-time");
+    let result = z.string().describe("date-time");
     const description = this.mergeParameterDescription(value.description, constraints);
     if (description) {
       result = result.describe(description);
@@ -10561,7 +9416,7 @@ var SchemaCompatLayer2 = class {
    * Type guard for optional Zod types
    */
   isOptional(v) {
-    return v instanceof ZodOptional;
+    return v instanceof ZodOptional$1;
   }
   /**
    * Type guard for object Zod types
@@ -10573,7 +9428,7 @@ var SchemaCompatLayer2 = class {
    * Type guard for null Zod types
    */
   isNull(v) {
-    return v instanceof ZodNull;
+    return v instanceof ZodNull$1;
   }
   /**
    * Type guard for array Zod types
@@ -10585,7 +9440,7 @@ var SchemaCompatLayer2 = class {
    * Type guard for union Zod types
    */
   isUnion(v) {
-    return v instanceof ZodUnion;
+    return v instanceof ZodUnion$1;
   }
   /**
    * Type guard for string Zod types
@@ -10603,13 +9458,13 @@ var SchemaCompatLayer2 = class {
    * Type guard for date Zod types
    */
   isDate(v) {
-    return v instanceof ZodDate;
+    return v instanceof ZodDate$1;
   }
   /**
    * Type guard for default Zod types
    */
   isDefault(v) {
-    return v instanceof ZodDefault;
+    return v instanceof ZodDefault$1;
   }
   /**
    * Determines whether this compatibility layer should be applied for the current model.
@@ -11251,7 +10106,7 @@ var GoogleSchemaCompatLayer = class extends SchemaCompatLayer3 {
     if (isOptional2(z)(value)) {
       return this.defaultZodOptionalHandler(value, ["ZodObject", "ZodArray", "ZodUnion", "ZodString", "ZodNumber"]);
     } else if (isNull(z)(value)) {
-      return any().refine((v) => v === null, { message: "must be null" }).describe(value.description || "must be null");
+      return z.any().refine((v) => v === null, { message: "must be null" }).describe(value.description || "must be null");
     } else if (isObj2(z)(value)) {
       return this.defaultZodObjectHandler(value);
     } else if (isArr2(z)(value)) {
@@ -11385,7 +10240,7 @@ var OpenAIReasoningSchemaCompatLayer = class extends SchemaCompatLayer3 {
     } else if (isDate(z)(value)) {
       return this.defaultZodDateHandler(value);
     } else if (value.constructor.name === "ZodAny") {
-      return string().describe(
+      return z.string().describe(
         (value.description ?? "") + `
 Argument was an "any" type, but you (the LLM) do not support "any", so it was cast to a "string" type`
       );
@@ -11806,13 +10661,13 @@ var CoreToolBuilder = class extends MastraBase {
   // Helper to get parameters based on tool type
   getParameters = () => {
     if (isVercelTool(this.originalTool)) {
-      let schema2 = this.originalTool.parameters ?? ("inputSchema" in this.originalTool ? this.originalTool.inputSchema : void 0) ?? object$1({});
+      let schema2 = this.originalTool.parameters ?? ("inputSchema" in this.originalTool ? this.originalTool.inputSchema : void 0) ?? z.object({});
       if (typeof schema2 === "function") {
         schema2 = schema2();
       }
       return schema2;
     }
-    let schema = this.originalTool.inputSchema ?? object$1({});
+    let schema = this.originalTool.inputSchema ?? z.object({});
     if (typeof schema === "function") {
       schema = schema();
     }
@@ -12139,7 +10994,7 @@ function ensureToolProperties(tools) {
   return toolsWithProperties;
 }
 function convertVercelToolParameters(tool) {
-  let schema = tool.parameters ?? object$1({});
+  let schema = tool.parameters ?? z.object({});
   if (typeof schema === "function") {
     schema = schema();
   }
@@ -12218,15 +11073,6 @@ function checkEvalStorageFields(traceObject, logger) {
     return false;
   }
   return true;
-}
-var SQL_IDENTIFIER_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-function parseSqlIdentifier(name, kind = "identifier") {
-  if (!SQL_IDENTIFIER_PATTERN.test(name) || name.length > 63) {
-    throw new Error(
-      `Invalid ${kind}: ${name}. Must start with a letter or underscore, contain only letters, numbers, or underscores, and be at most 63 characters long.`
-    );
-  }
-  return name;
 }
 async function fetchWithRetry(url, options = {}, maxRetries = 3) {
   let retryCount = 0;
@@ -14024,4 +12870,4 @@ var ModelSpanTracker = class {
   }
 };
 
-export { AISpanType as A, createMastraProxy as B, getOrCreateSpan as C, DeepSeekSchemaCompatLayer as D, getValidTraceId as E, ToolStream as F, GoogleSchemaCompatLayer as G, wrapMastra as H, InvalidArgumentError$1 as I, JSONParseError as J, selectFields as K, ModelSpanTracker as L, MetaSchemaCompatLayer as M, checkEvalStorageFields as N, OpenAIReasoningSchemaCompatLayer as O, SecureJSON as S, TypeValidationError as T, shutdownAITracingRegistry as a, convertUint8ArrayToBase64 as b, convertToCoreMessages as c, customAlphabet as d, AISDKError as e, fetchWithRetry as f, getAllAITracing as g, APICallError as h, convertJsonSchemaToZod as i, generateEmptyFromSchema as j, deepMerge as k, OpenAISchemaCompatLayer as l, AnthropicSchemaCompatLayer as m, applyCompatLayer as n, isZodType as o, parseSqlIdentifier as p, jsonSchema as q, output_exports as r, setupAITracing as s, generateText as t, generateObject as u, streamText as v, streamObject as w, delay as x, ensureToolProperties as y, makeCoreTool as z };
+export { AISpanType as A, generateEmptyFromSchema as B, checkEvalStorageFields as C, DeepSeekSchemaCompatLayer as D, GoogleSchemaCompatLayer as G, MetaSchemaCompatLayer as M, OpenAIReasoningSchemaCompatLayer as O, ToolStream as T, shutdownAITracingRegistry as a, convertUint8ArrayToBase64 as b, convertToCoreMessages as c, deepMerge as d, OpenAISchemaCompatLayer as e, fetchWithRetry as f, getAllAITracing as g, AnthropicSchemaCompatLayer as h, applyCompatLayer as i, isZodType as j, jsonSchema as k, generateText as l, generateObject as m, streamText as n, output_exports as o, streamObject as p, delay as q, ensureToolProperties as r, setupAITracing as s, makeCoreTool as t, createMastraProxy as u, getOrCreateSpan as v, getValidTraceId as w, wrapMastra as x, selectFields as y, ModelSpanTracker as z };

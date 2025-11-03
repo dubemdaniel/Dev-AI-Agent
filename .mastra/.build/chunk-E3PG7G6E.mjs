@@ -1,8 +1,10 @@
 import { c as convertToCoreMessages, b as convertUint8ArrayToBase64$1, f as fetchWithRetry } from './ai-tracing.mjs';
 import { M as MastraError } from './error.mjs';
 import { randomUUID } from 'crypto';
-import { b as safeParseAsync, t as toJSONSchema, u as union, s as string, c as _instanceof, d as custom, l as lazy, e as _null, n as number, f as boolean, r as record, g as array, o as object$1, h as literal, i as unknown, j as discriminatedUnion, k as looseObject, m as optional, p as base64 } from './coerce.mjs';
+import { s as safeParseAsync, u as union, k as string, l as _instanceof, m as custom, n as lazy, o as _null, p as number, q as boolean, r as record, t as array, v as object$1, w as literal, x as unknown, y as discriminatedUnion, z as looseObject, A as optional, B as base64 } from './schemas.mjs';
+import { t as toJSONSchema } from './coerce.mjs';
 import { ZodFirstPartyTypeKind } from './zod-v3.mjs';
+import { z } from 'zod';
 
 // src/errors/ai-sdk-error.ts
 var marker$1 = "vercel.ai.error";
@@ -4029,11 +4031,11 @@ function convertToV1Messages(messages) {
   }
   return v1Messages;
 }
-union([
-  string(),
-  _instanceof(Uint8Array),
-  _instanceof(ArrayBuffer),
-  custom(
+z.union([
+  z.string(),
+  z.instanceof(Uint8Array),
+  z.instanceof(ArrayBuffer),
+  z.custom(
     // Buffer might not be available in some environments such as CloudFlare:
     (value) => globalThis.Buffer?.isBuffer(value) ?? false,
     { message: "Must be a Buffer" }

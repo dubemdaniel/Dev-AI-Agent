@@ -7,11 +7,11 @@ export const jokeAgent = new Agent({
   name: "Joke Agent",
   model: "google/gemini-2.0-flash-lite",
   tools: { jokeTool },
-  memory: new Memory({
-    storage: new LibSQLStore({
-      url: "file:../mastra.db",
-    }),
+memory: new Memory({
+  storage: new LibSQLStore({
+    url: ":memory:",
   }),
+}),
   instructions: `
     You are **Joke Agent**, a witty and friendly programming comedian who always keeps it clean.
 

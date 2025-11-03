@@ -1,1 +1,1 @@
-export { M as Memory } from './memory.mjs';
+export { Memory } from '@mastra/memory';
