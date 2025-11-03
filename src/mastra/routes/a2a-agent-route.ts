@@ -10,7 +10,7 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
       const mastra = c.get("mastra");
       const agentId = c.req.param("agentId");
 
-      // Try to parse body safely
+      // Safely parse body
       let body: any = {};
       try {
         body = await c.req.json();
@@ -18,14 +18,14 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
         body = {};
       }
 
-      // Handle empty JSON gracefully (important for Mastra ping check)
+      // Handle empty body (Mastra ping check)
       if (!body || Object.keys(body).length === 0) {
         return c.json(
           {
             jsonrpc: "2.0",
-            id: null,
+            id: randomUUID(),
             result: {
-              message: "Joke Agent API is alive and ready.",
+              message: "✅ Joke Agent API is alive and ready.",
               status: "ok",
             },
           },
@@ -33,10 +33,11 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
         );
       }
 
-      const { jsonrpc, id: requestId, params } = body;
+      // Extract JSON-RPC fields properly
+      const { jsonrpc, id: requestId, method, params } = body;
 
-      // Don’t fail the health check respond with 200 instead of 400 because of deployment
-      if (jsonrpc !== "2.0" || !requestId) {
+      // JSON-RPC 2.0 validation (must include method & id)
+      if (jsonrpc !== "2.0" || !requestId || !method) {
         return c.json(
           {
             jsonrpc: "2.0",
@@ -44,13 +45,14 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
             error: {
               code: -32600,
               message:
-                'Invalid Request: jsonrpc must be "2.0" and id is required',
+                'Invalid Request: must include "jsonrpc": "2.0", "id", and "method"',
             },
           },
           200
         );
       }
 
+      // Validate agent existence
       const agent = mastra.getAgent(agentId);
       if (!agent) {
         return c.json(
@@ -66,29 +68,33 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
         );
       }
 
-      const { message, messages, contextId, taskId } = params || {};
+      // Extract message data
+      const { message, messages, contextId, taskId, metadata } = params || {};
+
       const messagesList = message
         ? [message]
         : Array.isArray(messages)
         ? messages
         : [];
 
+      //  Convert messages to Mastra format
       const mastraMessages = messagesList.map((msg: any) => ({
         role: msg.role,
         content:
           msg.parts
-            ?.map(
-              (part: { kind: string; text?: string; data?: unknown }) =>
-                part.kind === "text"
-                  ? part.text
-                  : JSON.stringify(part.data ?? "")
+            ?.map((part: { kind: string; text?: string; data?: unknown }) =>
+              part.kind === "text"
+                ? part.text
+                : JSON.stringify(part.data ?? "")
             )
             .join("\n") || "",
       }));
 
+      //  Generate agent response
       const response = await agent.generate(mastraMessages);
       const agentText = response.text || "";
 
+      // Build artifacts
       const artifacts: {
         artifactId: string;
         name: string;
@@ -112,6 +118,7 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
         });
       }
 
+      // Build message history
       const history = [
         ...messagesList.map((msg: any) => ({
           kind: "message",
@@ -129,6 +136,7 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
         },
       ];
 
+      // Return A2A-compliant response
       return c.json({
         jsonrpc: "2.0",
         id: requestId,
@@ -139,10 +147,10 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
             state: "completed",
             timestamp: new Date().toISOString(),
             message: {
+              kind: "message",
               messageId: randomUUID(),
               role: "agent",
               parts: [{ kind: "text", text: agentText }],
-              kind: "message",
             },
           },
           artifacts,
@@ -162,8 +170,7 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
             data: { details: error.message },
           },
         },
-        200
-        // i returned 200 to prevent deployment health check failure
+        200 
       );
     }
   },
