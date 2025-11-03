@@ -35,7 +35,7 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
 
       const { jsonrpc, id: requestId, params } = body;
 
-      // Don’t fail the health check — respond with 200 instead of 400
+      // Don’t fail the health check respond with 200 instead of 400 because of deployment
       if (jsonrpc !== "2.0" || !requestId) {
         return c.json(
           {
@@ -163,7 +163,7 @@ export const a2aAgentRoute = registerApiRoute("/a2a/agent/:agentId", {
           },
         },
         200
-        // Still return 200 to prevent deployment health check failure
+        // i returned 200 to prevent deployment health check failure
       );
     }
   },
